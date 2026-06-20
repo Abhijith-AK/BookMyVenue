@@ -1,0 +1,45 @@
+import { Venue } from './models/venue.model';
+import { GetVenueFilterDto } from './dto/get-venue-filter.dto';
+import { VenueCategory } from './models/venue-category.model';
+import { VenueAmenity } from './models/venue-amenity.model';
+import { VenueService } from './models/venue-service.model';
+import { CreateVenueServiceDto } from './dto/create-service-venue.dto';
+import { UpdateVenueServiceDto } from './dto/update-service-venue.dto';
+import { CreateVenueDto } from './dto/create-venue.dto';
+import { UpdateVenueDto } from './dto/update-venue.dto';
+import { UpdateVenueCategoryDto } from './dto/update-category-venue.dto';
+import { CreateVenueCategoryDto } from './dto/create-category-venue.dto';
+import { CreateVenueAmenityDto } from './dto/create-amenity-venue.dto';
+import { UpdateVenueAmenityDto } from './dto/update-amenity-venue.dto';
+export declare class VenuesService {
+    private venues;
+    private categories;
+    private amenities;
+    private services;
+    private venueCategoryMappings;
+    private venueAmenityMappings;
+    private toMinutes;
+    getAllVenues(): Venue[];
+    getFilteredVenues(query: GetVenueFilterDto): Venue[];
+    getVenueById(id: string): Venue;
+    getVenueForOwners(ownerId: string): Venue[];
+    getAllCategories(): VenueCategory[];
+    getCategoryById(id: string): VenueCategory;
+    getAllAmenities(): VenueAmenity[];
+    getAmenityById(id: string): VenueAmenity;
+    getAllServices(venueId: string): VenueService[];
+    createService(serviceDto: CreateVenueServiceDto): VenueService[];
+    updateService(id: string, updateServiceDto: UpdateVenueServiceDto): VenueService;
+    deleteService(id: string): void;
+    createVenue(createVenueDto: CreateVenueDto): {
+        venue: Venue;
+    };
+    updateVenue(id: string, updateVenueDto: UpdateVenueDto): Venue;
+    deleteVenue(id: string): void;
+    createCategory(createCategoryDto: CreateVenueCategoryDto): VenueCategory;
+    deleteCategory(id: string): void;
+    updateCategory(id: string, updateCategoryDto: UpdateVenueCategoryDto): VenueCategory;
+    createAmenity(createAmenityDto: CreateVenueAmenityDto): VenueAmenity;
+    updateAmenity(id: string, updateVenueAmenityDto: UpdateVenueAmenityDto): VenueAmenity;
+    deleteAmenity(id: string): void;
+}
