@@ -24,6 +24,7 @@ const create_service_venue_dto_1 = require("./dto/create-service-venue.dto");
 const update_service_venue_dto_1 = require("./dto/update-service-venue.dto");
 const create_venue_dto_1 = require("./dto/create-venue.dto");
 const update_venue_dto_1 = require("./dto/update-venue.dto");
+const get_venue_id_dto_1 = require("./dto/get-venue-id.dto");
 let VenuesController = class VenuesController {
     venueService;
     constructor(venueService) {
@@ -75,8 +76,8 @@ let VenuesController = class VenuesController {
     deleteService(id) {
         return this.venueService.deleteService(id);
     }
-    getVenueById(id) {
-        return this.venueService.getVenueById(id);
+    getVenueById(id, query) {
+        return this.venueService.getVenueById(id, query);
     }
     updateVenue(id, updatevenueDto) {
         return this.venueService.updateVenue(id, updatevenueDto);
@@ -196,8 +197,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)(":id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, get_venue_id_dto_1.GetVenueByIdDto]),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getVenueById", null);
 __decorate([

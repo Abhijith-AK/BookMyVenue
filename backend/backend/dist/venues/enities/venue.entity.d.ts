@@ -1,0 +1,30 @@
+import { Districts, VenueStatus, WeekDays } from "../enums/venue.enums";
+import { User } from "../../users/user.entity";
+import { VenueCategory } from "./venue-category.entity";
+import { VenueAmenity } from "./venue-amenity.entity";
+export declare class Venue {
+    id: string;
+    owner: User;
+    ownerId: string;
+    name: string;
+    description: string;
+    address: string;
+    district: Districts;
+    photos: string[];
+    minCapacity: number;
+    maxCapacity: number;
+    tags?: string[];
+    status: VenueStatus;
+    availableFrom: Date;
+    availableUntil: Date;
+    openingTime: string;
+    closingTime: string;
+    holidays?: Date[];
+    weekDayOff?: WeekDays[];
+    slotDurationMinutes: number;
+    pricePerSlot: number;
+    bookingBufferMinutes: number;
+    categories: VenueCategory[];
+    amenities: VenueAmenity[];
+    createdAt: Date;
+}

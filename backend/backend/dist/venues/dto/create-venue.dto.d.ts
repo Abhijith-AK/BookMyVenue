@@ -1,4 +1,4 @@
-import { Districts, WeekDays } from "../models/venue.model";
+import { Districts, WeekDays } from "../enums/venue.enums";
 export declare class CreateVenueDto {
     name: string;
     description: string;

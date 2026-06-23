@@ -1,175 +1,254 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Venue, VenueStatus, WeekDays } from './models/venue.model';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { VenueStatus, WeekDays, SlotStatus } from './enums/venue.enums';
 import { GetVenueFilterDto } from './dto/get-venue-filter.dto';
-import { VenueCategory } from './models/venue-category.model';
-import { VenueAmenity } from './models/venue-amenity.model';
-import { VenueService } from './models/venue-service.model';
 import { CreateVenueServiceDto } from './dto/create-service-venue.dto';
-import { randomUUID } from 'crypto';
 import { UpdateVenueServiceDto } from './dto/update-service-venue.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
-import { VenueCategoryMapping } from './models/venue-category-mapping.model';
-import { VenueAmenityMapping } from './models/venue-amenity-mapping.model';
 import { UpdateVenueCategoryDto } from './dto/update-category-venue.dto';
 import { CreateVenueCategoryDto } from './dto/create-category-venue.dto';
 import { CreateVenueAmenityDto } from './dto/create-amenity-venue.dto';
 import { UpdateVenueAmenityDto } from './dto/update-amenity-venue.dto';
+import { GetVenueByIdDto } from './dto/get-venue-id.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Venue } from './enities/venue.entity';
+import { Repository } from 'typeorm';
+import { VenueSlot } from './enities/venue-slot.entity';
+import { VenueService } from './enities/venue-service.entity';
+import { VenueCategory } from './enities/venue-category.entity';
+import { VenueAmenity } from './enities/venue-amenity.entity';
 
 @Injectable()
 export class VenuesService {
-    private venues: Venue[] = [];
-    private categories: VenueCategory[] = [];
-    private amenities: VenueAmenity[] = [];
-    private services: VenueService[] = [];
-    private venueCategoryMappings: VenueCategoryMapping[] = [];
-    private venueAmenityMappings: VenueAmenityMapping[] = [];
+    constructor(
+        @InjectRepository(Venue)
+        private venueRepository: Repository<Venue>,
+        @InjectRepository(VenueSlot)
+        private venueSlotRepository: Repository<VenueSlot>,
+        @InjectRepository(VenueService)
+        private venueServiceRepository: Repository<VenueService>,
+        @InjectRepository(VenueCategory)
+        private venueCategoryRepository: Repository<VenueCategory>,
+        @InjectRepository(VenueAmenity)
+        private venueAmenityRepository: Repository<VenueAmenity>,
+    ){}
 
+    private weekDays = [
+        WeekDays.SUNDAY,
+        WeekDays.MONDAY,
+        WeekDays.TUESDAY,
+        WeekDays.WEDNESDAY,
+        WeekDays.THURSDAY,
+        WeekDays.FRIDAY,
+        WeekDays.SATURDAY,
+    ];
     private toMinutes(time: string): number {
         const [h, m] = time.split(":").map(Number);
         return h * 60 + m;
+    };
+    private toDate(date: Date): string {
+        return date.toISOString().split("T")[0];
+    };
+
+    private generateSlots(venue: Venue, venueSlots: VenueSlot[], date: Date){
+        const slots: VenueSlot[] = []
+        const {openingTime, closingTime, id, pricePerSlot, slotDurationMinutes, bookingBufferMinutes} = venue;
+        const now = new Date();
+        
+        let startAt = new Date(date);
+        const endTime = new Date(date);
+        const [startHours, startMinutes] = openingTime.split(":").map(Number);
+        const [endHours, endMinutes] = closingTime.split(":").map(Number);
+        startAt.setHours(startHours, startMinutes, 0, 0);
+        endTime.setHours(endHours, endMinutes, 0, 0);
+        
+        // generate slots
+        while(startAt < endTime){
+            const end = new Date(startAt);
+            end.setMinutes(startAt.getMinutes() + slotDurationMinutes)
+            if (end > endTime)
+                break;
+
+            const slot: VenueSlot = this.venueSlotRepository.create({
+                startAt: new Date(startAt),
+                endAt: new Date(end),
+                price: pricePerSlot,
+                status: SlotStatus.AVAILABLE,
+                venueId: id
+            })
+
+            // remove slots of past time
+            if(new Date(date).toDateString() === now.toDateString() && slot.startAt <= now){
+                startAt = new Date(slot.endAt);
+                continue;
+            }
+
+            // remove booked slots
+            const bookedSlot = venueSlots.find((bslot) => bslot.startAt < slot.endAt && bslot.endAt > slot.startAt) //check for overlap
+            // add bufferMinutes after bookedSlots
+            if(bookedSlot){
+                startAt = new Date(bookedSlot.endAt);
+                startAt.setMinutes(startAt.getMinutes() + bookingBufferMinutes);
+                continue;
+            }
+
+            slots.push(slot);
+            startAt = new Date(slot.endAt);
+        }
+        // return available slots
+        return slots;
     }
 
     // -------PUBLIC---------
-    getAllVenues(){
-        return this.venues.filter((venue) => venue.status === VenueStatus.APPROVED)
-    }
     // filter venues
-    getFilteredVenues(query: GetVenueFilterDto){
-        let filteredVenues: Venue[] = this.venues.filter((venue) => venue.status === VenueStatus.APPROVED);
+    async getFilteredVenues(query: GetVenueFilterDto): Promise<Venue[]> {
+        const queryBuilder = this.venueRepository.createQueryBuilder('venue')
+                            .leftJoinAndSelect("venue.categories", "category")
+                            .where("venue.status = :status", {status: VenueStatus.APPROVED});
         if(query.search)
-            filteredVenues = filteredVenues.filter((venue) => venue.name.toLowerCase().includes(query.search!.toLowerCase()))
+            queryBuilder.andWhere("LOWER(venue.name) LIKE LOWER(:search)" ,{search: `%${query.search}%` });
         if(query.district)
-            filteredVenues = filteredVenues.filter((venue) => venue.district === query.district);
+            queryBuilder.andWhere("venue.district = :district", {district: query.district});
         if(query.capacity !== undefined)
-            filteredVenues = filteredVenues.filter((venue) => venue.maxCapacity >= query.capacity!);
+            queryBuilder.andWhere("venue.maxCapacity >= :capacity", {capacity: query.capacity!});
         if(query.price !== undefined)
-            filteredVenues = filteredVenues.filter((venue) => venue.pricePerSlot <= query.price!);
-        if(query.date)
-            filteredVenues = filteredVenues.filter((venue) => {
-                const weekDays = [
-                    WeekDays.SUNDAY,
-                    WeekDays.MONDAY,
-                    WeekDays.TUESDAY,
-                    WeekDays.WEDNESDAY,
-                    WeekDays.THURSDAY,
-                    WeekDays.FRIDAY,
-                    WeekDays.SATURDAY,
-                ];
-                const weekDay = weekDays[query.date!.getDay()];
-                if(venue.weekDayOff.includes(weekDay))
-                    return false;
-                const isHoliday = venue.holidays.some(holiday => holiday.toDateString() === query.date!.toDateString());
-                if(isHoliday)
-                    return false;
-                return venue.availableFrom <= query.date! && query.date! <= venue.availableUntil
-            });
+            queryBuilder.andWhere("venue.pricePerSlot <= :price", {price: query.price!});
+        if(query.date){
+            const date = this.toDate(query.date);
+            const weekDay = this.weekDays[query.date!.getDay()];
+            queryBuilder.andWhere("venue.availableFrom <= :date AND :date <= venue.availableUntil", {date})
+                        .andWhere("NOT(:weekDay = ANY(venue.weekDayOff))", {weekDay})
+                        .andWhere("NOT(:date = ANY(venue.holidays))", {date});
+            }
         if(query.category)
-            filteredVenues = filteredVenues.filter((venue) => this.venueCategoryMappings.some(m => m.categoryId === query.category && m.venueId === venue.id));
-        return filteredVenues;
+            queryBuilder.andWhere("category.id = :categoryId", {categoryId: query.category});
+        return await queryBuilder.getMany();  
     }
+
     // list a venue
-    getVenueById(id: string){
-        const venue = this.venues.find((venue) => venue.id === id);
+    async getVenueById(id: string, query?: GetVenueByIdDto): Promise<{venue: Venue;slots: VenueSlot[];services: VenueService[];}> 
+    {
+        const date = query?.date; //YYYY-MM-DD
+        const venue = await this.venueRepository.findOne({where: {id},  relations:{ categories:true, amenities:true }});
         if(!venue) throw new NotFoundException(`the venue with id ${id} not found!`);
-        return venue
-    }
+        let bookedSlots: VenueSlot[] = [];
+        const bookedSlotsQuery = this.venueSlotRepository.createQueryBuilder("venueSlot")
+                                    .where("venueSlot.status = :statusA OR venueSlot.status = :statusB", {
+                                        statusA: SlotStatus.BOOKED,
+                                        statusB: SlotStatus.HELD
+                                    });
+        if(date) {
+            const dateObj = date;
+            const dateStr = this.toDate(date);
+            const todayStr = this.toDate(new Date());
+            if(dateStr < this.toDate(venue.availableFrom) || dateStr > this.toDate(venue.availableUntil))
+                throw new BadRequestException(`Date ${date} not valid.`)
+            else if(venue.holidays?.some((h) => this.toDate(h) === dateStr))
+                throw new BadRequestException(`Date ${date} in holidays.`)
+            else if(venue.weekDayOff?.includes(this.weekDays[dateObj.getDay()]))
+                throw new BadRequestException(`Date ${date} in weekDayOff.`)
+            else if(dateStr < todayStr)
+                throw new BadRequestException(`Past date.`)
+            else{
+                bookedSlotsQuery.andWhere("venueSlot.venueId = :venueId", {venueId: venue.id})
+                                .andWhere("DATE(venueSlot.startAt) = :dateStr", {dateStr})
+                                .orderBy('venueSlot.startAt', "ASC");
+                bookedSlots = await bookedSlotsQuery.getMany();
+            }
+        }
+        const venueServices: VenueService[] = await this.venueServiceRepository.find({where: {venueId: venue.id}});
+        return {
+            venue,
+            slots: date ? this.generateSlots(venue, bookedSlots, date) : [],
+            services: venueServices
+        }
+    } 
 
     // -------OWNER-----------
     // list venues by owner
-    getVenueForOwners(ownerId: string){
-        return this.venues.filter((venue) => venue.ownerId === ownerId);
+    async getVenueForOwners(ownerId: string): Promise<Venue[]> {
+        return await this.venueRepository.find({where: {ownerId},   relations:{ categories:true, amenities:true }});
     }
     // list categorys
-    getAllCategories(){
-        return this.categories;
+    async getAllCategories(): Promise<VenueCategory[]> {
+        return await this.venueCategoryRepository.find();
     }
-    getCategoryById(id:string){
-        const category = this.categories.find((category) => category.id === id);
+    async getCategoryById(id:string): Promise<VenueCategory> {
+        const category = await this.venueCategoryRepository.findOne({where: {id}});
         if(!category) throw new NotFoundException(`category ${id} not found`);
         return category;
     }
     // list amenities 
-    getAllAmenities(){
-        return this.amenities;
+    async getAllAmenities(): Promise<VenueAmenity[]> {
+        return await this.venueAmenityRepository.find();
     }
-    getAmenityById(id: string){
-        const amenity = this.amenities.find((amenity) => amenity.id === id);
+    async getAmenityById(id: string): Promise<VenueAmenity> {
+        const amenity = await this.venueAmenityRepository.findOne({where: {id}});
         if(!amenity) throw new NotFoundException(`Amenity ${id} not found`);
         return amenity;
     }
     // list services by venue
-    getAllServices(venueId: string){
-        return this.services.filter((venue) => venue.venueId === venueId);
+    async getAllServices(venueId: string): Promise<VenueService[]> {
+        await this.getVenueById(venueId);
+        return await this.venueServiceRepository.find({where: {venueId}});
     }
     // create service
-    createService(serviceDto: CreateVenueServiceDto){
-        this.getVenueById(serviceDto.venueId);
-        const service: VenueService = {
-            id: randomUUID(),
+    async createService(serviceDto: CreateVenueServiceDto): Promise<VenueService> {
+        await this.getVenueById(serviceDto.venueId);
+        const service: VenueService = this.venueServiceRepository.create({
             ...serviceDto
-        };
-        this.services.push(service);
-        return this.services;
+        });
+        await this.venueServiceRepository.save(service);
+        return service;
     }
     // update service
-    updateService(id: string, updateServiceDto: UpdateVenueServiceDto){
-        const {name, price} = updateServiceDto
-        const service = this.services.find((service) => service.id === id);
+    async updateService(id: string, updateServiceDto: UpdateVenueServiceDto): Promise<VenueService> {
+        const {name, price} = updateServiceDto;
+        const service = await this.venueServiceRepository.findOne({where: {id}});
         if(!service) throw new NotFoundException(`service with ${id} not found.`);
         if(name) service.name = name;
         if(price !== undefined) service.price = price;
+        await this.venueServiceRepository.save(service);
         return service;
     }
     // delete service
-    deleteService(id: string){
-        const service = this.services.find((service) => service.id === id);
-        if(!service) throw new NotFoundException(`Service ${service} not found`)
-        this.services = this.services.filter((service) => service.id !== id);
+    async deleteService(id: string): Promise<void> {
+        const result = await this.venueServiceRepository.delete(id);
+        if(result.affected === 0) throw new NotFoundException(`Service ${id} not found`);
     }
     // create venue
-    createVenue(createVenueDto: CreateVenueDto){
+    async createVenue(createVenueDto: CreateVenueDto): Promise<Venue> {
         const {categoryIds, amenityIds, ...venueData} = createVenueDto;
+        const categories: VenueCategory[] = [];
+        const amenities: VenueAmenity[] = [];
         const {maxCapacity, minCapacity, availableFrom, availableUntil, openingTime, closingTime, tags, holidays, weekDayOff} = venueData;
         if(maxCapacity < minCapacity || availableFrom > availableUntil || this.toMinutes(openingTime) > this.toMinutes(closingTime)) 
             throw new BadRequestException("Invalid venue details");
-        categoryIds.forEach((categoryId) => {
-            const category = this.categories.find((category) => category.id === categoryId);
+        for (const categoryId of categoryIds){
+            const category = await this.venueCategoryRepository.findOne({where: {id: categoryId}});
             if(!category || !category.isActive) throw new BadRequestException(`Invalid Category ${categoryId}`);
-        });
-        amenityIds.forEach((amenityId) => {
-            const amenity = this.amenities.find((amenity) => amenity.id === amenityId);
+            categories.push(category);
+        };
+        for (const amenityId of amenityIds){
+            const amenity = await this.venueAmenityRepository.findOne({where: {id: amenityId}});
             if(!amenity || !amenity.isActive) throw new BadRequestException(`Invalid Amenity ${amenityId}`);
-        });
+            amenities.push(amenity)
+        };
 
-        const venue: Venue = {
-            id: randomUUID(),
+        const venue: Venue = this.venueRepository.create({
             ...venueData,
+            categories,
+            amenities,
             weekDayOff: weekDayOff ? weekDayOff : [],
             holidays: holidays ? holidays : [],
             tags: tags ? tags : [],
             status: VenueStatus.PENDING_APPROVAL,
-            createdAt: new Date()
-        }    
-        this.venues.push(venue);
-
-        categoryIds.forEach((categoryId) => this.venueCategoryMappings.push({
-            venueId: venue.id,
-            categoryId,
-        }));    
-
-        amenityIds.forEach((amenityId) => this.venueAmenityMappings.push({
-            venueId: venue.id,
-            amenityId,
-        }));
-
-        return {
-            venue,
-            
-        };
+        })    
+        await this.venueRepository.save(venue);
+        return venue;
     }
     // update venue
-    updateVenue(id: string, updateVenueDto: UpdateVenueDto){
+    async updateVenue(id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>{
         const { 
             address,
             availableFrom, 
@@ -190,7 +269,7 @@ export class VenuesService {
             weekDayOff,
             amenityIds,
             categoryIds } = updateVenueDto;
-        const venue = this.venues.find((venue) => venue.id === id);
+        const venue = await this.venueRepository.findOne({where: {id}, relations:{ categories:true, amenities:true }});
         if(!venue) throw new NotFoundException(`service with ${id} not found.`);
         // if(venue.ownerId !== ownerId) throw new ForbiddenException();
 
@@ -249,100 +328,98 @@ export class VenuesService {
         if(tags) venue.tags = tags;
         if(weekDayOff) venue.weekDayOff = weekDayOff;
         if(categoryIds) {
-            categoryIds.forEach((categoryId) => {
-                const category = this.categories.find((category) => category.id === categoryId);
+            const categories: VenueCategory[] = [];
+            for (const categoryId of categoryIds) {
+                const category = await this.venueCategoryRepository.findOne({where: {id: categoryId}});
                 if(!category || !category.isActive) throw new BadRequestException(`Invalid Category ${categoryId}`);
-            });
-            this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.venueId !== venue.id);
-            categoryIds.forEach((categoryId) => {
-                this.venueCategoryMappings.push({
-                venueId: venue.id,
-                categoryId
-            });
-        })}
-        if(amenityIds) {
-            amenityIds.forEach((amenityId) => {
-                const amenity = this.amenities.find((amenity) => amenity.id === amenityId);
-                if(!amenity || !amenity.isActive) throw new BadRequestException(`Invalid Amenity ${amenityId}`);
-            });
-            this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.venueId !== venue.id);
-            amenityIds.forEach((amenityId) => {
-                this.venueAmenityMappings.push({
-                    venueId: venue.id,
-                    amenityId
-                })
-            })
+                categories.push(category);
+            };
+           venue.categories = categories;
         }
+        if(amenityIds) {
+            const amenities: VenueAmenity[] = [];
+            for (const amenityId of amenityIds) {
+                const amenity = await this.venueAmenityRepository.findOne({where: {id: amenityId}});
+                if(!amenity || !amenity.isActive) throw new BadRequestException(`Invalid Amenity ${amenityId}`);
+                amenities.push(amenity)
+            };
+           venue.amenities = amenities;
+        }
+
+        await this.venueRepository.save(venue);
         return venue;
     }
     // delete venue
-    deleteVenue(id: string){
-        this.getVenueById(id);
-        this.venues = this.venues.filter((venue) => venue.id !== id);
-        this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.venueId !== id);
-        this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.venueId !== id);
-        this.services = this.services.filter((service) => service.venueId !== id);
+    async deleteVenue(id: string): Promise<void> {
+        const result = await this.venueRepository.delete(id);
+        if(result.affected === 0) throw new NotFoundException(`Venue with ID ${id} not found.`);
     }
     
     // -------ADMIN-----------
     // create category
-    createCategory(createCategoryDto: CreateVenueCategoryDto){
+    async createCategory(createCategoryDto: CreateVenueCategoryDto): Promise<VenueCategory> {
         const {name} = createCategoryDto;
-        const nameExists = this.categories.find((category) => category.name.toLowerCase() === name.toLowerCase())
+        const nameExists = await this.venueCategoryRepository.createQueryBuilder("category")
+                                    .where("LOWER(category.name) = LOWER(:name)", {name}).getOne();
         if(nameExists) throw new BadRequestException(`Category ${name} already exists`);
-        const category: VenueCategory = {
-            id: randomUUID(),
+        const category: VenueCategory = this.venueCategoryRepository.create({
             ...createCategoryDto
-        }
-        this.categories.push(category);
+        })
+        await this.venueCategoryRepository.save(category);
         return category;
     }
     // delete category
-    deleteCategory(id: string){
-        this.getCategoryById(id);
-        this.categories = this.categories.filter((category) => category.id !== id);
-        this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.categoryId !== id);
+    async deleteCategory(id: string): Promise<void> {
+        const result = await this.venueCategoryRepository.delete(id);
+        if(result.affected === 0) throw new NotFoundException(`Category with ID ${id} not found.`);
     }
     // update category 
-    updateCategory(id: string, updateCategoryDto: UpdateVenueCategoryDto){
-        const category = this.getCategoryById(id);
+    async updateCategory(id: string, updateCategoryDto: UpdateVenueCategoryDto): Promise<VenueCategory> {
+        const category = await this.getCategoryById(id);
         const {name, isActive} = updateCategoryDto;
         if(name){
-            const nameExists = this.categories.find((category) => category.id !== id && category.name.toLowerCase() === name.toLowerCase());
-            if(nameExists) throw new BadRequestException(`Category ${name} already exists`);
-            category.name = name;
+        const nameExists = await this.venueCategoryRepository.createQueryBuilder("category")
+                                    .where("LOWER(category.name) = LOWER(:name)", {name})
+                                    .andWhere("category.id != :id", {id})
+                                    .getOne();
+        if(nameExists) throw new BadRequestException(`Category ${name} already exists`);
+        category.name = name;
         }
         if(isActive !== undefined) category.isActive = isActive;
+        await this.venueCategoryRepository.save(category);
         return category;
     }
     // create amenities
-    createAmenity(createAmenityDto: CreateVenueAmenityDto){
+    async createAmenity(createAmenityDto: CreateVenueAmenityDto): Promise<VenueAmenity> {
         const {name} = createAmenityDto;
-        const nameExists = this.amenities.find((amenity) => amenity.name.toLowerCase() === name.toLowerCase())
+        const nameExists = await this.venueAmenityRepository.createQueryBuilder("amenity")
+                                    .where("LOWER(amenity.name) = LOWER(:name)", {name}).getOne();
         if(nameExists) throw new BadRequestException(`Amenity ${name} already exists`);
-        const amenity: VenueAmenity = {
-            id: randomUUID(),
+        const amenity: VenueAmenity = this.venueAmenityRepository.create({
             ...createAmenityDto
-        }
-        this.amenities.push(amenity);
+        })
+        await this.venueAmenityRepository.save(amenity);
         return amenity;
     }
     // update amenities 
-    updateAmenity(id: string, updateVenueAmenityDto: UpdateVenueAmenityDto){
-        const amenity = this.getAmenityById(id);
+    async updateAmenity(id: string, updateVenueAmenityDto: UpdateVenueAmenityDto): Promise<VenueAmenity> {
+        const amenity = await this.getAmenityById(id);
         const { name, isActive } = updateVenueAmenityDto;
            if(name){
-            const nameExists = this.amenities.find((amenity) => amenity.id !== id && amenity.name.toLowerCase() === name.toLowerCase());
+            const nameExists = await this.venueAmenityRepository.createQueryBuilder("amenity")
+                                    .where("LOWER(amenity.name) = LOWER(:name)", {name})
+                                    .andWhere("amenity.id != :id", {id})
+                                    .getOne();
             if(nameExists) throw new BadRequestException(`Amenity ${name} already exists`);
             amenity.name = name;
         }
         if(isActive !== undefined) amenity.isActive = isActive;
+        await this.venueAmenityRepository.save(amenity);
         return amenity;
     }
     // delete amenities
-    deleteAmenity(id: string){
-        this.getAmenityById(id);
-        this.amenities = this.amenities.filter((amenity) => amenity.id !== id)
-        this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.amenityId !== id);
+    async deleteAmenity(id: string): Promise<void> {
+        const result = await this.venueAmenityRepository.delete(id)
+        if(result.affected === 0) throw new NotFoundException(`Amenity with ID ${id} not found.`)
     }
 }

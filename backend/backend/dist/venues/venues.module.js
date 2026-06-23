@@ -10,11 +10,18 @@ exports.VenuesModule = void 0;
 const common_1 = require("@nestjs/common");
 const venues_controller_1 = require("./venues.controller");
 const venues_service_1 = require("./venues.service");
+const typeorm_1 = require("@nestjs/typeorm");
+const venue_entity_1 = require("./enities/venue.entity");
+const venue_amenity_entity_1 = require("./enities/venue-amenity.entity");
+const venue_category_entity_1 = require("./enities/venue-category.entity");
+const venue_service_entity_1 = require("./enities/venue-service.entity");
+const venue_slot_entity_1 = require("./enities/venue-slot.entity");
 let VenuesModule = class VenuesModule {
 };
 exports.VenuesModule = VenuesModule;
 exports.VenuesModule = VenuesModule = __decorate([
     (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([venue_entity_1.Venue, venue_amenity_entity_1.VenueAmenity, venue_category_entity_1.VenueCategory, venue_service_entity_1.VenueService, venue_slot_entity_1.VenueSlot])],
         controllers: [venues_controller_1.VenuesController],
         providers: [venues_service_1.VenuesService]
     })

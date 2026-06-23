@@ -1,4 +1,4 @@
-import { Districts } from "../models/venue.model";
+import { Districts } from "../enums/venue.enums";
 export declare class GetVenueFilterDto {
     search?: string;
     district?: Districts;

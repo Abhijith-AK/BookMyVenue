@@ -5,154 +5,237 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VenuesService = void 0;
 const common_1 = require("@nestjs/common");
-const venue_model_1 = require("./models/venue.model");
-const crypto_1 = require("crypto");
+const venue_enums_1 = require("./enums/venue.enums");
+const typeorm_1 = require("@nestjs/typeorm");
+const venue_entity_1 = require("./enities/venue.entity");
+const typeorm_2 = require("typeorm");
+const venue_slot_entity_1 = require("./enities/venue-slot.entity");
+const venue_service_entity_1 = require("./enities/venue-service.entity");
+const venue_category_entity_1 = require("./enities/venue-category.entity");
+const venue_amenity_entity_1 = require("./enities/venue-amenity.entity");
 let VenuesService = class VenuesService {
-    venues = [];
-    categories = [];
-    amenities = [];
-    services = [];
-    venueCategoryMappings = [];
-    venueAmenityMappings = [];
+    venueRepository;
+    venueSlotRepository;
+    venueServiceRepository;
+    venueCategoryRepository;
+    venueAmenityRepository;
+    constructor(venueRepository, venueSlotRepository, venueServiceRepository, venueCategoryRepository, venueAmenityRepository) {
+        this.venueRepository = venueRepository;
+        this.venueSlotRepository = venueSlotRepository;
+        this.venueServiceRepository = venueServiceRepository;
+        this.venueCategoryRepository = venueCategoryRepository;
+        this.venueAmenityRepository = venueAmenityRepository;
+    }
+    weekDays = [
+        venue_enums_1.WeekDays.SUNDAY,
+        venue_enums_1.WeekDays.MONDAY,
+        venue_enums_1.WeekDays.TUESDAY,
+        venue_enums_1.WeekDays.WEDNESDAY,
+        venue_enums_1.WeekDays.THURSDAY,
+        venue_enums_1.WeekDays.FRIDAY,
+        venue_enums_1.WeekDays.SATURDAY,
+    ];
     toMinutes(time) {
         const [h, m] = time.split(":").map(Number);
         return h * 60 + m;
     }
-    getAllVenues() {
-        return this.venues.filter((venue) => venue.status === venue_model_1.VenueStatus.APPROVED);
+    ;
+    toDate(date) {
+        return date.toISOString().split("T")[0];
     }
-    getFilteredVenues(query) {
-        let filteredVenues = this.venues.filter((venue) => venue.status === venue_model_1.VenueStatus.APPROVED);
-        if (query.search)
-            filteredVenues = filteredVenues.filter((venue) => venue.name.toLowerCase().includes(query.search.toLowerCase()));
-        if (query.district)
-            filteredVenues = filteredVenues.filter((venue) => venue.district === query.district);
-        if (query.capacity !== undefined)
-            filteredVenues = filteredVenues.filter((venue) => venue.maxCapacity >= query.capacity);
-        if (query.price !== undefined)
-            filteredVenues = filteredVenues.filter((venue) => venue.pricePerSlot <= query.price);
-        if (query.date)
-            filteredVenues = filteredVenues.filter((venue) => {
-                const weekDays = [
-                    venue_model_1.WeekDays.SUNDAY,
-                    venue_model_1.WeekDays.MONDAY,
-                    venue_model_1.WeekDays.TUESDAY,
-                    venue_model_1.WeekDays.WEDNESDAY,
-                    venue_model_1.WeekDays.THURSDAY,
-                    venue_model_1.WeekDays.FRIDAY,
-                    venue_model_1.WeekDays.SATURDAY,
-                ];
-                const weekDay = weekDays[query.date.getDay()];
-                if (venue.weekDayOff.includes(weekDay))
-                    return false;
-                const isHoliday = venue.holidays.some(holiday => holiday.toDateString() === query.date.toDateString());
-                if (isHoliday)
-                    return false;
-                return venue.availableFrom <= query.date && query.date <= venue.availableUntil;
+    ;
+    generateSlots(venue, venueSlots, date) {
+        const slots = [];
+        const { openingTime, closingTime, id, pricePerSlot, slotDurationMinutes, bookingBufferMinutes } = venue;
+        const now = new Date();
+        let startAt = new Date(date);
+        const endTime = new Date(date);
+        const [startHours, startMinutes] = openingTime.split(":").map(Number);
+        const [endHours, endMinutes] = closingTime.split(":").map(Number);
+        startAt.setHours(startHours, startMinutes, 0, 0);
+        endTime.setHours(endHours, endMinutes, 0, 0);
+        while (startAt < endTime) {
+            const end = new Date(startAt);
+            end.setMinutes(startAt.getMinutes() + slotDurationMinutes);
+            if (end > endTime)
+                break;
+            const slot = this.venueSlotRepository.create({
+                startAt: new Date(startAt),
+                endAt: new Date(end),
+                price: pricePerSlot,
+                status: venue_enums_1.SlotStatus.AVAILABLE,
+                venueId: id
             });
-        if (query.category)
-            filteredVenues = filteredVenues.filter((venue) => this.venueCategoryMappings.some(m => m.categoryId === query.category && m.venueId === venue.id));
-        return filteredVenues;
+            if (new Date(date).toDateString() === now.toDateString() && slot.startAt <= now) {
+                startAt = new Date(slot.endAt);
+                continue;
+            }
+            const bookedSlot = venueSlots.find((bslot) => bslot.startAt < slot.endAt && bslot.endAt > slot.startAt);
+            if (bookedSlot) {
+                startAt = new Date(bookedSlot.endAt);
+                startAt.setMinutes(startAt.getMinutes() + bookingBufferMinutes);
+                continue;
+            }
+            slots.push(slot);
+            startAt = new Date(slot.endAt);
+        }
+        return slots;
     }
-    getVenueById(id) {
-        const venue = this.venues.find((venue) => venue.id === id);
+    async getFilteredVenues(query) {
+        const queryBuilder = this.venueRepository.createQueryBuilder('venue')
+            .leftJoinAndSelect("venue.categories", "category")
+            .where("venue.status = :status", { status: venue_enums_1.VenueStatus.APPROVED });
+        if (query.search)
+            queryBuilder.andWhere("LOWER(venue.name) LIKE LOWER(:search)", { search: `%${query.search}%` });
+        if (query.district)
+            queryBuilder.andWhere("venue.district = :district", { district: query.district });
+        if (query.capacity !== undefined)
+            queryBuilder.andWhere("venue.maxCapacity >= :capacity", { capacity: query.capacity });
+        if (query.price !== undefined)
+            queryBuilder.andWhere("venue.pricePerSlot <= :price", { price: query.price });
+        if (query.date) {
+            const date = this.toDate(query.date);
+            const weekDay = this.weekDays[query.date.getDay()];
+            queryBuilder.andWhere("venue.availableFrom <= :date AND :date <= venue.availableUntil", { date })
+                .andWhere("NOT(:weekDay = ANY(venue.weekDayOff))", { weekDay })
+                .andWhere("NOT(:date = ANY(venue.holidays))", { date });
+        }
+        if (query.category)
+            queryBuilder.andWhere("category.id = :categoryId", { categoryId: query.category });
+        return await queryBuilder.getMany();
+    }
+    async getVenueById(id, query) {
+        const date = query?.date;
+        const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
         if (!venue)
             throw new common_1.NotFoundException(`the venue with id ${id} not found!`);
-        return venue;
+        let bookedSlots = [];
+        const bookedSlotsQuery = this.venueSlotRepository.createQueryBuilder("venueSlot")
+            .where("venueSlot.status = :statusA OR venueSlot.status = :statusB", {
+            statusA: venue_enums_1.SlotStatus.BOOKED,
+            statusB: venue_enums_1.SlotStatus.HELD
+        });
+        if (date) {
+            const dateObj = date;
+            const dateStr = this.toDate(date);
+            const todayStr = this.toDate(new Date());
+            if (dateStr < this.toDate(venue.availableFrom) || dateStr > this.toDate(venue.availableUntil))
+                throw new common_1.BadRequestException(`Date ${date} not valid.`);
+            else if (venue.holidays?.some((h) => this.toDate(h) === dateStr))
+                throw new common_1.BadRequestException(`Date ${date} in holidays.`);
+            else if (venue.weekDayOff?.includes(this.weekDays[dateObj.getDay()]))
+                throw new common_1.BadRequestException(`Date ${date} in weekDayOff.`);
+            else if (dateStr < todayStr)
+                throw new common_1.BadRequestException(`Past date.`);
+            else {
+                bookedSlotsQuery.andWhere("venueSlot.venueId = :venueId", { venueId: venue.id })
+                    .andWhere("DATE(venueSlot.startAt) = :dateStr", { dateStr })
+                    .orderBy('venueSlot.startAt', "ASC");
+                bookedSlots = await bookedSlotsQuery.getMany();
+            }
+        }
+        const venueServices = await this.venueServiceRepository.find({ where: { venueId: venue.id } });
+        return {
+            venue,
+            slots: date ? this.generateSlots(venue, bookedSlots, date) : [],
+            services: venueServices
+        };
     }
-    getVenueForOwners(ownerId) {
-        return this.venues.filter((venue) => venue.ownerId === ownerId);
+    async getVenueForOwners(ownerId) {
+        return await this.venueRepository.find({ where: { ownerId }, relations: { categories: true, amenities: true } });
     }
-    getAllCategories() {
-        return this.categories;
+    async getAllCategories() {
+        return await this.venueCategoryRepository.find();
     }
-    getCategoryById(id) {
-        const category = this.categories.find((category) => category.id === id);
+    async getCategoryById(id) {
+        const category = await this.venueCategoryRepository.findOne({ where: { id } });
         if (!category)
             throw new common_1.NotFoundException(`category ${id} not found`);
         return category;
     }
-    getAllAmenities() {
-        return this.amenities;
+    async getAllAmenities() {
+        return await this.venueAmenityRepository.find();
     }
-    getAmenityById(id) {
-        const amenity = this.amenities.find((amenity) => amenity.id === id);
+    async getAmenityById(id) {
+        const amenity = await this.venueAmenityRepository.findOne({ where: { id } });
         if (!amenity)
             throw new common_1.NotFoundException(`Amenity ${id} not found`);
         return amenity;
     }
-    getAllServices(venueId) {
-        return this.services.filter((venue) => venue.venueId === venueId);
+    async getAllServices(venueId) {
+        await this.getVenueById(venueId);
+        return await this.venueServiceRepository.find({ where: { venueId } });
     }
-    createService(serviceDto) {
-        this.getVenueById(serviceDto.venueId);
-        const service = {
-            id: (0, crypto_1.randomUUID)(),
+    async createService(serviceDto) {
+        await this.getVenueById(serviceDto.venueId);
+        const service = this.venueServiceRepository.create({
             ...serviceDto
-        };
-        this.services.push(service);
-        return this.services;
+        });
+        await this.venueServiceRepository.save(service);
+        return service;
     }
-    updateService(id, updateServiceDto) {
+    async updateService(id, updateServiceDto) {
         const { name, price } = updateServiceDto;
-        const service = this.services.find((service) => service.id === id);
+        const service = await this.venueServiceRepository.findOne({ where: { id } });
         if (!service)
             throw new common_1.NotFoundException(`service with ${id} not found.`);
         if (name)
             service.name = name;
         if (price !== undefined)
             service.price = price;
+        await this.venueServiceRepository.save(service);
         return service;
     }
-    deleteService(id) {
-        const service = this.services.find((service) => service.id === id);
-        if (!service)
-            throw new common_1.NotFoundException(`Service ${service} not found`);
-        this.services = this.services.filter((service) => service.id !== id);
+    async deleteService(id) {
+        const result = await this.venueServiceRepository.delete(id);
+        if (result.affected === 0)
+            throw new common_1.NotFoundException(`Service ${id} not found`);
     }
-    createVenue(createVenueDto) {
+    async createVenue(createVenueDto) {
         const { categoryIds, amenityIds, ...venueData } = createVenueDto;
+        const categories = [];
+        const amenities = [];
         const { maxCapacity, minCapacity, availableFrom, availableUntil, openingTime, closingTime, tags, holidays, weekDayOff } = venueData;
         if (maxCapacity < minCapacity || availableFrom > availableUntil || this.toMinutes(openingTime) > this.toMinutes(closingTime))
             throw new common_1.BadRequestException("Invalid venue details");
-        categoryIds.forEach((categoryId) => {
-            const category = this.categories.find((category) => category.id === categoryId);
+        for (const categoryId of categoryIds) {
+            const category = await this.venueCategoryRepository.findOne({ where: { id: categoryId } });
             if (!category || !category.isActive)
                 throw new common_1.BadRequestException(`Invalid Category ${categoryId}`);
-        });
-        amenityIds.forEach((amenityId) => {
-            const amenity = this.amenities.find((amenity) => amenity.id === amenityId);
+            categories.push(category);
+        }
+        ;
+        for (const amenityId of amenityIds) {
+            const amenity = await this.venueAmenityRepository.findOne({ where: { id: amenityId } });
             if (!amenity || !amenity.isActive)
                 throw new common_1.BadRequestException(`Invalid Amenity ${amenityId}`);
-        });
-        const venue = {
-            id: (0, crypto_1.randomUUID)(),
+            amenities.push(amenity);
+        }
+        ;
+        const venue = this.venueRepository.create({
             ...venueData,
+            categories,
+            amenities,
             weekDayOff: weekDayOff ? weekDayOff : [],
             holidays: holidays ? holidays : [],
             tags: tags ? tags : [],
-            status: venue_model_1.VenueStatus.PENDING_APPROVAL,
-            createdAt: new Date()
-        };
-        this.venues.push(venue);
-        categoryIds.forEach((categoryId) => this.venueCategoryMappings.push({
-            venueId: venue.id,
-            categoryId,
-        }));
-        amenityIds.forEach((amenityId) => this.venueAmenityMappings.push({
-            venueId: venue.id,
-            amenityId,
-        }));
-        return {
-            venue,
-        };
+            status: venue_enums_1.VenueStatus.PENDING_APPROVAL,
+        });
+        await this.venueRepository.save(venue);
+        return venue;
     }
-    updateVenue(id, updateVenueDto) {
+    async updateVenue(id, updateVenueDto) {
         const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, openingTime, photos, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
-        const venue = this.venues.find((venue) => venue.id === id);
+        const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
         if (!venue)
             throw new common_1.NotFoundException(`service with ${id} not found.`);
         const finalAvailableFrom = availableFrom ?? venue.availableFrom;
@@ -226,105 +309,116 @@ let VenuesService = class VenuesService {
         if (weekDayOff)
             venue.weekDayOff = weekDayOff;
         if (categoryIds) {
-            categoryIds.forEach((categoryId) => {
-                const category = this.categories.find((category) => category.id === categoryId);
+            const categories = [];
+            for (const categoryId of categoryIds) {
+                const category = await this.venueCategoryRepository.findOne({ where: { id: categoryId } });
                 if (!category || !category.isActive)
                     throw new common_1.BadRequestException(`Invalid Category ${categoryId}`);
-            });
-            this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.venueId !== venue.id);
-            categoryIds.forEach((categoryId) => {
-                this.venueCategoryMappings.push({
-                    venueId: venue.id,
-                    categoryId
-                });
-            });
+                categories.push(category);
+            }
+            ;
+            venue.categories = categories;
         }
         if (amenityIds) {
-            amenityIds.forEach((amenityId) => {
-                const amenity = this.amenities.find((amenity) => amenity.id === amenityId);
+            const amenities = [];
+            for (const amenityId of amenityIds) {
+                const amenity = await this.venueAmenityRepository.findOne({ where: { id: amenityId } });
                 if (!amenity || !amenity.isActive)
                     throw new common_1.BadRequestException(`Invalid Amenity ${amenityId}`);
-            });
-            this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.venueId !== venue.id);
-            amenityIds.forEach((amenityId) => {
-                this.venueAmenityMappings.push({
-                    venueId: venue.id,
-                    amenityId
-                });
-            });
+                amenities.push(amenity);
+            }
+            ;
+            venue.amenities = amenities;
         }
+        await this.venueRepository.save(venue);
         return venue;
     }
-    deleteVenue(id) {
-        this.getVenueById(id);
-        this.venues = this.venues.filter((venue) => venue.id !== id);
-        this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.venueId !== id);
-        this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.venueId !== id);
-        this.services = this.services.filter((service) => service.venueId !== id);
+    async deleteVenue(id) {
+        const result = await this.venueRepository.delete(id);
+        if (result.affected === 0)
+            throw new common_1.NotFoundException(`Venue with ID ${id} not found.`);
     }
-    createCategory(createCategoryDto) {
+    async createCategory(createCategoryDto) {
         const { name } = createCategoryDto;
-        const nameExists = this.categories.find((category) => category.name.toLowerCase() === name.toLowerCase());
+        const nameExists = await this.venueCategoryRepository.createQueryBuilder("category")
+            .where("LOWER(category.name) = LOWER(:name)", { name }).getOne();
         if (nameExists)
             throw new common_1.BadRequestException(`Category ${name} already exists`);
-        const category = {
-            id: (0, crypto_1.randomUUID)(),
+        const category = this.venueCategoryRepository.create({
             ...createCategoryDto
-        };
-        this.categories.push(category);
+        });
+        await this.venueCategoryRepository.save(category);
         return category;
     }
-    deleteCategory(id) {
-        this.getCategoryById(id);
-        this.categories = this.categories.filter((category) => category.id !== id);
-        this.venueCategoryMappings = this.venueCategoryMappings.filter(m => m.categoryId !== id);
+    async deleteCategory(id) {
+        const result = await this.venueCategoryRepository.delete(id);
+        if (result.affected === 0)
+            throw new common_1.NotFoundException(`Category with ID ${id} not found.`);
     }
-    updateCategory(id, updateCategoryDto) {
-        const category = this.getCategoryById(id);
+    async updateCategory(id, updateCategoryDto) {
+        const category = await this.getCategoryById(id);
         const { name, isActive } = updateCategoryDto;
         if (name) {
-            const nameExists = this.categories.find((category) => category.id !== id && category.name.toLowerCase() === name.toLowerCase());
+            const nameExists = await this.venueCategoryRepository.createQueryBuilder("category")
+                .where("LOWER(category.name) = LOWER(:name)", { name })
+                .andWhere("category.id != :id", { id })
+                .getOne();
             if (nameExists)
                 throw new common_1.BadRequestException(`Category ${name} already exists`);
             category.name = name;
         }
         if (isActive !== undefined)
             category.isActive = isActive;
+        await this.venueCategoryRepository.save(category);
         return category;
     }
-    createAmenity(createAmenityDto) {
+    async createAmenity(createAmenityDto) {
         const { name } = createAmenityDto;
-        const nameExists = this.amenities.find((amenity) => amenity.name.toLowerCase() === name.toLowerCase());
+        const nameExists = await this.venueAmenityRepository.createQueryBuilder("amenity")
+            .where("LOWER(amenity.name) = LOWER(:name)", { name }).getOne();
         if (nameExists)
             throw new common_1.BadRequestException(`Amenity ${name} already exists`);
-        const amenity = {
-            id: (0, crypto_1.randomUUID)(),
+        const amenity = this.venueAmenityRepository.create({
             ...createAmenityDto
-        };
-        this.amenities.push(amenity);
+        });
+        await this.venueAmenityRepository.save(amenity);
         return amenity;
     }
-    updateAmenity(id, updateVenueAmenityDto) {
-        const amenity = this.getAmenityById(id);
+    async updateAmenity(id, updateVenueAmenityDto) {
+        const amenity = await this.getAmenityById(id);
         const { name, isActive } = updateVenueAmenityDto;
         if (name) {
-            const nameExists = this.amenities.find((amenity) => amenity.id !== id && amenity.name.toLowerCase() === name.toLowerCase());
+            const nameExists = await this.venueAmenityRepository.createQueryBuilder("amenity")
+                .where("LOWER(amenity.name) = LOWER(:name)", { name })
+                .andWhere("amenity.id != :id", { id })
+                .getOne();
             if (nameExists)
                 throw new common_1.BadRequestException(`Amenity ${name} already exists`);
             amenity.name = name;
         }
         if (isActive !== undefined)
             amenity.isActive = isActive;
+        await this.venueAmenityRepository.save(amenity);
         return amenity;
     }
-    deleteAmenity(id) {
-        this.getAmenityById(id);
-        this.amenities = this.amenities.filter((amenity) => amenity.id !== id);
-        this.venueAmenityMappings = this.venueAmenityMappings.filter(m => m.amenityId !== id);
+    async deleteAmenity(id) {
+        const result = await this.venueAmenityRepository.delete(id);
+        if (result.affected === 0)
+            throw new common_1.NotFoundException(`Amenity with ID ${id} not found.`);
     }
 };
 exports.VenuesService = VenuesService;
 exports.VenuesService = VenuesService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(venue_entity_1.Venue)),
+    __param(1, (0, typeorm_1.InjectRepository)(venue_slot_entity_1.VenueSlot)),
+    __param(2, (0, typeorm_1.InjectRepository)(venue_service_entity_1.VenueService)),
+    __param(3, (0, typeorm_1.InjectRepository)(venue_category_entity_1.VenueCategory)),
+    __param(4, (0, typeorm_1.InjectRepository)(venue_amenity_entity_1.VenueAmenity)),
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository,
+        typeorm_2.Repository])
 ], VenuesService);
 //# sourceMappingURL=venues.service.js.map

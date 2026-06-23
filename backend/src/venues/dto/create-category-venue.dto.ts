@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import { IsBoolean, IsNotEmpty, IsString, IsUUID, MaxLength } from "class-validator";
 
 export class CreateVenueCategoryDto{
@@ -7,6 +8,7 @@ export class CreateVenueCategoryDto{
     name!: string
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     isActive!: boolean 
 }

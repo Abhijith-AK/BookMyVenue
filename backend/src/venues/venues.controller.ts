@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseDatePipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { VenuesService } from './venues.service';
 import { GetVenueFilterDto } from './dto/get-venue-filter.dto';
 import { CreateVenueCategoryDto } from './dto/create-category-venue.dto';
@@ -9,6 +9,7 @@ import { CreateVenueServiceDto } from './dto/create-service-venue.dto';
 import { UpdateVenueServiceDto } from './dto/update-service-venue.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
+import { GetVenueByIdDto } from './dto/get-venue-id.dto';
 
 @Controller('venues')
 export class VenuesController {
@@ -91,8 +92,8 @@ export class VenuesController {
     }
 
     @Get(":id")
-    getVenueById(@Param('id', new ParseUUIDPipe()) id: string){
-        return this.venueService.getVenueById(id);
+    getVenueById(@Param('id', new ParseUUIDPipe()) id: string, @Query() query: GetVenueByIdDto){
+        return this.venueService.getVenueById(id, query);
     }
 
     @Patch(":id")

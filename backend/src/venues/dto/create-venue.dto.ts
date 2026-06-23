@@ -1,5 +1,5 @@
 import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsDate, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from "class-validator";
-import { Districts, WeekDays } from "../models/venue.model";
+import { Districts, WeekDays } from "../enums/venue.enums";
 import { Type } from "class-transformer";
 
 export class CreateVenueDto {

@@ -10,12 +10,27 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const users_module_1 = require("./users/users.module");
 const venues_module_1 = require("./venues/venues.module");
+const bookings_module_1 = require("./bookings/bookings.module");
+const typeorm_1 = require("@nestjs/typeorm");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [users_module_1.UsersModule, venues_module_1.VenuesModule],
+        imports: [users_module_1.UsersModule,
+            venues_module_1.VenuesModule,
+            bookings_module_1.BookingsModule,
+            typeorm_1.TypeOrmModule.forRoot({
+                type: 'postgres',
+                host: 'localhost',
+                port: 5432,
+                username: 'postgres',
+                password: 'postges',
+                database: 'book-my-venue',
+                autoLoadEntities: true,
+                synchronize: true
+            })
+        ],
         controllers: [],
         providers: [],
     })

@@ -28,8 +28,8 @@ let UsersController = class UsersController {
     getUser(id) {
         return this.usersService.getUserById(id);
     }
-    async createUser(createUserDto) {
-        return await this.usersService.createUser(createUserDto);
+    createUser(createUserDto) {
+        return this.usersService.createUser(createUserDto);
     }
     updateUser(id, updateUserDto) {
         return this.usersService.updateUser(id, updateUserDto);
@@ -43,14 +43,14 @@ __decorate([
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Array)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getAllUsers", null);
 __decorate([
     (0, common_1.Get)('/:id'),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getUser", null);
 __decorate([
     (0, common_1.Post)(),
@@ -65,14 +65,14 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, update_user_dto_1.UpdateUserDto]),
-    __metadata("design:returntype", Object)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)('/:id'),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "deleteUser", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),

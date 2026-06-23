@@ -38,54 +38,69 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
-const user_model_1 = require("./user.model");
-const crypto_1 = require("crypto");
+const user_enums_1 = require("./user.enums");
 const bcrypt = __importStar(require("bcrypt"));
+const typeorm_1 = require("@nestjs/typeorm");
+const user_entity_1 = require("./user.entity");
+const typeorm_2 = require("typeorm");
 let UsersService = class UsersService {
-    users = [];
-    getAllUsers() {
-        return this.users;
+    userRepository;
+    constructor(userRepository) {
+        this.userRepository = userRepository;
     }
-    getUserById(id) {
-        const user = this.users.find(user => user.id == id);
+    async getAllUsers() {
+        return await this.userRepository.find();
+    }
+    async getUserById(id) {
+        const user = await this.userRepository.findOne({ where: { id } });
         if (!user)
             throw new common_1.NotFoundException(`the user with id ${id} not found!`);
         return user;
     }
     async createUser(createUserDto) {
-        const found = this.users.find(user => user.email === createUserDto.email);
+        const found = await this.userRepository.findOne({ where: { email: createUserDto.email } });
         if (found)
             throw new common_1.ConflictException("email already exists");
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-        const user = {
-            id: (0, crypto_1.randomUUID)(),
+        const user = this.userRepository.create({
             ...createUserDto,
+            phoneNo: createUserDto.phoneNo.toString(),
             password: hashedPassword,
-            status: user_model_1.UserStatus.ACTIVE,
-            createdAt: new Date()
-        };
-        this.users.push(user);
+            status: user_enums_1.UserStatus.ACTIVE,
+        });
+        await this.userRepository.save(user);
         return user;
     }
-    updateUser(id, updateUserDto) {
+    async updateUser(id, updateUserDto) {
         const { name, phoneNo } = updateUserDto;
-        const user = this.getUserById(id);
+        const user = await this.getUserById(id);
         if (name)
             user.name = name;
         if (phoneNo)
-            user.phoneNo = phoneNo;
+            user.phoneNo = phoneNo.toString();
+        await this.userRepository.save(user);
         return user;
     }
-    deleteUser(id) {
-        this.getUserById(id);
-        this.users = this.users.filter(user => user.id !== id);
+    async deleteUser(id) {
+        const result = await this.userRepository.delete(id);
+        if (result.affected === 0) {
+            throw new common_1.NotFoundException(`User with ID "${id}" not found`);
+        }
     }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, typeorm_1.InjectRepository)(user_entity_1.User)),
+    __metadata("design:paramtypes", [typeorm_2.Repository])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

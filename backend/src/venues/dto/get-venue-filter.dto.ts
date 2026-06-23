@@ -1,5 +1,5 @@
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
-import { Districts } from "../models/venue.model";
+import { Districts } from "../enums/venue.enums";
 import { Type } from "class-transformer";
 
 export class GetVenueFilterDto{

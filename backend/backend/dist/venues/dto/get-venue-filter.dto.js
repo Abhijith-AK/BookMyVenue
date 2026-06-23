@@ -11,7 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetVenueFilterDto = void 0;
 const class_validator_1 = require("class-validator");
-const venue_model_1 = require("../models/venue.model");
+const venue_enums_1 = require("../enums/venue.enums");
 const class_transformer_1 = require("class-transformer");
 class GetVenueFilterDto {
     search;
@@ -29,7 +29,7 @@ __decorate([
 ], GetVenueFilterDto.prototype, "search", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(venue_model_1.Districts),
+    (0, class_validator_1.IsEnum)(venue_enums_1.Districts),
     __metadata("design:type", String)
 ], GetVenueFilterDto.prototype, "district", void 0);
 __decorate([

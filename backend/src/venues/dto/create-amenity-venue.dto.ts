@@ -1,3 +1,4 @@
+import { Type } from "class-transformer";
 import { IsBoolean, IsNotEmpty, IsString, IsUUID, MaxLength } from "class-validator";
 
 export class CreateVenueAmenityDto{
@@ -7,6 +8,7 @@ export class CreateVenueAmenityDto{
     name!: string
 
     @IsNotEmpty()
+    @Type(() => Boolean)
     @IsBoolean()
     isActive!: boolean 
 }
