@@ -11,6 +11,7 @@ import { VenueSlot } from './enities/venue-slot.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([Venue, VenueAmenity, VenueCategory, VenueService, VenueSlot])],
   controllers: [VenuesController],
-  providers: [VenuesService]
+  providers: [VenuesService],
+  exports: [VenueService]
 })
 export class VenuesModule {}

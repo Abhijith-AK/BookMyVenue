@@ -1,9 +1,10 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { Venue } from "./venue.entity";
 import { SlotStatus } from "../enums/venue.enums";
+import { Booking } from "src/bookings/booking.entity";
 
 @Entity()
-@Unique(["venueId", "startAt"])
+@Unique("UQ_VENUE_SLOT_START", ["venueId", "startAt"])
 export class VenueSlot{
     @PrimaryGeneratedColumn("uuid")
     id!: string;
@@ -33,5 +34,12 @@ export class VenueSlot{
         type: "enum",
         enum: SlotStatus
     })
-    status!: SlotStatus
+    status!: SlotStatus;
+
+    @ManyToOne(() => Booking, booking => booking.slots, {nullable: true})
+    @JoinColumn({name: "bookingId"})
+    booking?: Booking
+
+    @Column("uuid", {nullable: true})
+    bookingId?: string;
 }

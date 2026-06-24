@@ -1,6 +1,7 @@
 import { ArrayNotEmpty, IsArray, IsNotEmpty, IsNumber, IsUUID, Min, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { CreateBookingServiceDto } from "./create-service-booking.dto";
+import { CreateBookingSlotDto } from "./create-slot-booking.dto";
 
 export class CreateBookingDto{
         @IsNotEmpty()
@@ -11,11 +12,12 @@ export class CreateBookingDto{
         @IsUUID()
         customerId!: string;
 
-        @IsNotEmpty()
         @IsArray()
         @ArrayNotEmpty()
-        @IsUUID('4', {each: true})
-        slotIds!: string[];
+        @IsNotEmpty()
+        @ValidateNested({each: true})
+        @Type(() => CreateBookingSlotDto)
+        slots!: CreateBookingSlotDto[];
 
         @IsNotEmpty()
         @Type(() => Number)
