@@ -1,7 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { BookingStatus } from "./enums/booking.enums";
 import { Venue } from "src/venues/enities/venue.entity";
 import { VenueSlot } from "src/venues/enities/venue-slot.entity";
+import { Payment } from "src/payments/payment.entity";
 
 @Entity()
 export class Booking{
@@ -36,6 +37,15 @@ export class Booking{
     @Column("int")
     guestCount!: number;
 
+    @OneToMany(() => Payment, payment => payment.booking)
+    payments!: Payment[];
+
+    @Column({nullable: true})
+    cancellationReason?: string
+
     @CreateDateColumn()
     createdAt!: Date;
+
+    @UpdateDateColumn()
+    updatedAt!: Date;
 }

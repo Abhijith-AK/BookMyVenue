@@ -13,9 +13,10 @@ exports.CreateQuoteBookingDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 const create_service_booking_dto_1 = require("./create-service-booking.dto");
+const create_slot_booking_dto_1 = require("./create-slot-booking.dto");
 class CreateQuoteBookingDto {
     venueId;
-    slotIds;
+    slots;
     guestCount;
     services;
 }
@@ -26,12 +27,13 @@ __decorate([
     __metadata("design:type", String)
 ], CreateQuoteBookingDto.prototype, "venueId", void 0);
 __decorate([
-    (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),
-    (0, class_validator_1.IsUUID)('4', { each: true }),
+    (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => create_slot_booking_dto_1.CreateBookingSlotDto),
     __metadata("design:type", Array)
-], CreateQuoteBookingDto.prototype, "slotIds", void 0);
+], CreateQuoteBookingDto.prototype, "slots", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_transformer_1.Type)(() => Number),

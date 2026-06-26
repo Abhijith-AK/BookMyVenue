@@ -12,24 +12,31 @@ const users_module_1 = require("./users/users.module");
 const venues_module_1 = require("./venues/venues.module");
 const bookings_module_1 = require("./bookings/bookings.module");
 const typeorm_1 = require("@nestjs/typeorm");
+const payments_module_1 = require("./payments/payments.module");
+const schedule_1 = require("@nestjs/schedule");
+const config_1 = require("@nestjs/config");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [users_module_1.UsersModule,
-            venues_module_1.VenuesModule,
-            bookings_module_1.BookingsModule,
+        imports: [
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            schedule_1.ScheduleModule.forRoot(),
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: 'localhost',
-                port: 5432,
-                username: 'postgres',
-                password: 'postges',
-                database: 'book-my-venue',
+                port: Number(process.env.PG_DB_PORT),
+                username: process.env.PG_DB_UNAME,
+                password: process.env.PG_DB_PASS,
+                database: process.env.PG_DB_NAME,
                 autoLoadEntities: true,
                 synchronize: true
-            })
+            }),
+            users_module_1.UsersModule,
+            venues_module_1.VenuesModule,
+            bookings_module_1.BookingsModule,
+            payments_module_1.PaymentsModule
         ],
         controllers: [],
         providers: [],

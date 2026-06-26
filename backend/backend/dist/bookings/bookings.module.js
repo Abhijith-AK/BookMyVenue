@@ -10,14 +10,27 @@ exports.BookingsModule = void 0;
 const common_1 = require("@nestjs/common");
 const bookings_controller_1 = require("./bookings.controller");
 const bookings_service_1 = require("./bookings.service");
+const venues_module_1 = require("../venues/venues.module");
+const users_module_1 = require("../users/users.module");
+const typeorm_1 = require("@nestjs/typeorm");
+const booking_entity_1 = require("./booking.entity");
+const venue_slot_entity_1 = require("../venues/enities/venue-slot.entity");
+const payments_module_1 = require("../payments/payments.module");
+const payment_entity_1 = require("../payments/payment.entity");
 let BookingsModule = class BookingsModule {
 };
 exports.BookingsModule = BookingsModule;
 exports.BookingsModule = BookingsModule = __decorate([
     (0, common_1.Module)({
-        imports: [BookingsModule],
+        imports: [
+            (0, common_1.forwardRef)(() => payments_module_1.PaymentsModule),
+            venues_module_1.VenuesModule,
+            users_module_1.UsersModule,
+            typeorm_1.TypeOrmModule.forFeature([booking_entity_1.Booking, venue_slot_entity_1.VenueSlot, payment_entity_1.Payment]),
+        ],
         controllers: [bookings_controller_1.BookingsController],
-        providers: [bookings_service_1.BookingsService]
+        providers: [bookings_service_1.BookingsService],
+        exports: [bookings_service_1.BookingsService]
     })
 ], BookingsModule);
 //# sourceMappingURL=bookings.module.js.map

@@ -13,6 +13,7 @@ exports.VenueSlot = void 0;
 const typeorm_1 = require("typeorm");
 const venue_entity_1 = require("./venue.entity");
 const venue_enums_1 = require("../enums/venue.enums");
+const booking_entity_1 = require("../../bookings/booking.entity");
 let VenueSlot = class VenueSlot {
     id;
     venue;
@@ -21,6 +22,8 @@ let VenueSlot = class VenueSlot {
     endAt;
     price;
     status;
+    booking;
+    bookingId;
 };
 exports.VenueSlot = VenueSlot;
 __decorate([
@@ -60,8 +63,17 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], VenueSlot.prototype, "status", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => booking_entity_1.Booking, booking => booking.slots, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: "bookingId" }),
+    __metadata("design:type", booking_entity_1.Booking)
+], VenueSlot.prototype, "booking", void 0);
+__decorate([
+    (0, typeorm_1.Column)("uuid", { nullable: true }),
+    __metadata("design:type", String)
+], VenueSlot.prototype, "bookingId", void 0);
 exports.VenueSlot = VenueSlot = __decorate([
     (0, typeorm_1.Entity)(),
-    (0, typeorm_1.Unique)(["venueId", "startAt"])
+    (0, typeorm_1.Unique)("UQ_VENUE_SLOT_START", ["venueId", "startAt"])
 ], VenueSlot);
 //# sourceMappingURL=venue-slot.entity.js.map
