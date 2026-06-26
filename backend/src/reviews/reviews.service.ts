@@ -8,6 +8,7 @@ import { User } from 'src/users/user.entity';
 import { Booking } from 'src/bookings/booking.entity';
 import { BookingsService } from 'src/bookings/bookings.service';
 import { BookingStatus } from 'src/bookings/enums/booking.enums';
+import { Venue } from 'src/venues/enities/venue.entity';
 
 @Injectable()
 export class ReviewsService {
@@ -67,5 +68,18 @@ export class ReviewsService {
     async deleteReview(id: string){
         const result = await this.reviewRepository.delete(id);
         if(result.affected === 0) throw new NotFoundException(`review ${id} not found`)
+    }
+    // get reviews for owner
+    async getReviewsForOwner(ownerId: string){
+        const reviews = await this.reviewRepository.createQueryBuilder("review")
+        .leftJoin(User, "customer", "customer.id = review.customerId")
+        .innerJoin(Venue, "venue", "venue.id = review.venueId AND venue.ownerId = :ownerId", {ownerId})
+        .select("review")
+        .addSelect("venue.id", "venueId")
+        .addSelect("venue.name", "venueName")
+        .addSelect("customer.name", "customerName")
+        .getRawMany();
+
+        return reviews;
     }
 }

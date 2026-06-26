@@ -58,6 +58,7 @@ let BookingsService = class BookingsService {
                 status: (0, typeorm_2.In)([
                     booking_enums_1.BookingStatus.CANCELLED,
                     booking_enums_1.BookingStatus.CONFIRMED,
+                    booking_enums_1.BookingStatus.COMPLETED,
                     booking_enums_1.BookingStatus.FAILED
                 ])
             },
@@ -76,7 +77,7 @@ let BookingsService = class BookingsService {
             .leftJoinAndSelect("booking.venue", "venue")
             .leftJoinAndSelect("booking.payments", "payments")
             .where("booking.venueId IN (:...venueIds)", { venueIds })
-            .andWhere("booking.status IN (:...statuses)", { statuses: [booking_enums_1.BookingStatus.CONFIRMED, booking_enums_1.BookingStatus.CANCELLED] })
+            .andWhere("booking.status IN (:...statuses)", { statuses: [booking_enums_1.BookingStatus.CONFIRMED, booking_enums_1.BookingStatus.CANCELLED, booking_enums_1.BookingStatus.COMPLETED] })
             .getMany();
         if (!bookings.length)
             throw new common_1.NotFoundException(`No booking found for OwnerID ${ownerId}`);
@@ -203,6 +204,22 @@ let BookingsService = class BookingsService {
         await bookingRepository.save(booking);
         await venueSlotRepository.save(slots);
     }
+    async completeBookings() {
+        const confirmedBookings = await this.bookingRepository.find({
+            where: { status: booking_enums_1.BookingStatus.CONFIRMED },
+            relations: { slots: true }
+        });
+        const now = Date.now();
+        for (const booking of confirmedBookings) {
+            if (!booking.slots.length)
+                continue;
+            const latestEndTime = Math.max(...booking.slots.map(s => s.endAt.getTime()));
+            if (latestEndTime < now) {
+                booking.status = booking_enums_1.BookingStatus.COMPLETED;
+                await this.bookingRepository.save(booking);
+            }
+        }
+    }
     async cancelBooking(bookingId, reason) {
         const booking = await this.bookingRepository.findOne({ where: { id: bookingId }, relations: { slots: true, venue: true } });
         if (!booking)
@@ -237,6 +254,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], BookingsService.prototype, "expirePendingBookings", null);
+__decorate([
+    (0, schedule_1.Cron)('*/10 * * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], BookingsService.prototype, "completeBookings", null);
 exports.BookingsService = BookingsService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectDataSource)()),

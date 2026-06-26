@@ -33,6 +33,7 @@ export declare class BookingsService {
     expirePendingBookings(): Promise<void>;
     failedBooking(bookingId: string, manager: EntityManager): Promise<void>;
     confirmedBooking(bookingId: string, manager: EntityManager): Promise<void>;
+    completeBookings(): Promise<void>;
     cancelBooking(bookingId: string, reason?: string): Promise<{
         booking: Booking;
     }>;

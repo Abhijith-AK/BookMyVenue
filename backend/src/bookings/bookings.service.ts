@@ -46,6 +46,7 @@ export class BookingsService {
             status: In([
                 BookingStatus.CANCELLED,
                 BookingStatus.CONFIRMED,
+                BookingStatus.COMPLETED,
                 BookingStatus.FAILED
             ]) 
         },
@@ -64,7 +65,7 @@ export class BookingsService {
                                     .leftJoinAndSelect("booking.venue", "venue")
                                     .leftJoinAndSelect("booking.payments", "payments")
                                     .where("booking.venueId IN (:...venueIds)", {venueIds})
-                                    .andWhere("booking.status IN (:...statuses)", {statuses: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED]})
+                                    .andWhere("booking.status IN (:...statuses)", {statuses: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.COMPLETED]})
                                     .getMany();
         if(!bookings.length) throw new NotFoundException(`No booking found for OwnerID ${ownerId}`);
         return bookings;

@@ -8,6 +8,7 @@ import { BookingsModule } from 'src/bookings/bookings.module';
 @Module({
   imports: [TypeOrmModule.forFeature([Review]), BookingsModule],
   controllers: [ReviewsController],
-  providers: [ReviewsService]
+  providers: [ReviewsService],
+  exports: [ReviewsService]
 })
 export class ReviewsModule {}

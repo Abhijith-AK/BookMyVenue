@@ -15,6 +15,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const payments_module_1 = require("./payments/payments.module");
 const schedule_1 = require("@nestjs/schedule");
 const config_1 = require("@nestjs/config");
+const reviews_module_1 = require("./reviews/reviews.module");
+const owner_module_1 = require("./owner/owner.module");
+const admin_module_1 = require("./admin/admin.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -36,7 +39,10 @@ exports.AppModule = AppModule = __decorate([
             users_module_1.UsersModule,
             venues_module_1.VenuesModule,
             bookings_module_1.BookingsModule,
-            payments_module_1.PaymentsModule
+            payments_module_1.PaymentsModule,
+            reviews_module_1.ReviewsModule,
+            owner_module_1.OwnerModule,
+            admin_module_1.AdminModule
         ],
         controllers: [],
         providers: [],

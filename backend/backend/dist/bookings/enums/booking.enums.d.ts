@@ -1,8 +1,9 @@
 export declare enum BookingStatus {
     PENDING = "PENDING",
     CONFIRMED = "CONFIRMED",
+    FAILED = "FAILED",
     CANCELLED = "CANCELLED",
-    FAILED = "FAILED"
+    COMPLETED = "COMPLETED"
 }
 export declare enum PriceType {
     FIXED = "FIXED",
