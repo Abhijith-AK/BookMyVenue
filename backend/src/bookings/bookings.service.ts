@@ -232,7 +232,25 @@ export class BookingsService {
             await bookingRepository.save(booking!);
             await venueSlotRepository.save(slots!);
     }
-
+    // completed bookings
+    @Cron('*/10 * * * *')
+    async completeBookings() {
+        const confirmedBookings = await this.bookingRepository.find(
+            {
+                where: { status: BookingStatus.CONFIRMED },
+                relations: { slots: true }
+            }
+        );
+        const now = Date.now();
+        for (const booking of confirmedBookings){        
+            if (!booking.slots.length) continue;
+            const latestEndTime = Math.max(...booking.slots.map(s => s.endAt.getTime()));
+            if(latestEndTime < now){
+                booking.status = BookingStatus.COMPLETED;
+                await this.bookingRepository.save(booking);
+            }
+        }
+    }
     // cancel booking
     async cancelBooking(bookingId: string, reason?: string){
         const booking = await this.bookingRepository.findOne({where: {id: bookingId}, relations:{slots: true, venue: true}});
