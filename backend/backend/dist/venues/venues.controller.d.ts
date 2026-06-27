@@ -15,7 +15,7 @@ export declare class VenuesController {
     constructor(venueService: VenuesService);
     getAllVenues(query: GetVenueFilterDto): Promise<import("./enities/venue.entity").Venue[]>;
     getAllVenuesByOwner(ownerId: string): Promise<import("./enities/venue.entity").Venue[]>;
-    createVenue(createVenueDto: CreateVenueDto): Promise<import("./enities/venue.entity").Venue>;
+    createVenue(user: JwtUser, files: Array<Express.Multer.File>, createVenueDto: CreateVenueDto): Promise<import("./enities/venue.entity").Venue>;
     getAllCategories(): Promise<import("./enities/venue-category.entity").VenueCategory[]>;
     createCategory(createCategoryDto: CreateVenueCategoryDto): Promise<import("./enities/venue-category.entity").VenueCategory>;
     updateCategory(id: string, updateCategoryDto: UpdateVenueCategoryDto): Promise<import("./enities/venue-category.entity").VenueCategory>;
@@ -34,5 +34,6 @@ export declare class VenuesController {
         services: import("./enities/venue-service.entity").VenueService[];
     }>;
     updateVenue(user: JwtUser, id: string, updatevenueDto: UpdateVenueDto): Promise<import("./enities/venue.entity").Venue>;
+    updateVenuePhotos(user: JwtUser, id: string, files: Express.Multer.File[]): Promise<import("./photos.model").Photos[]>;
     deleteVenue(user: JwtUser, id: string): Promise<void>;
 }

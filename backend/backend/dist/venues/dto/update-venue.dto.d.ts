@@ -4,7 +4,6 @@ export declare class UpdateVenueDto {
     description?: string;
     address?: string;
     district?: Districts;
-    photos?: string[];
     minCapacity?: number;
     maxCapacity?: number;
     tags?: string[];

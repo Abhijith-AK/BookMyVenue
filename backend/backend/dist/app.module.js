@@ -21,6 +21,7 @@ const admin_module_1 = require("./admin/admin.module");
 const auth_module_1 = require("./auth/auth.module");
 const core_1 = require("@nestjs/core");
 const jwt_auth_guard_1 = require("./auth/guards/jwt-auth.guard");
+const cloudinary_module_1 = require("./cloudinary/cloudinary.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -46,7 +47,8 @@ exports.AppModule = AppModule = __decorate([
             reviews_module_1.ReviewsModule,
             owner_module_1.OwnerModule,
             admin_module_1.AdminModule,
-            auth_module_1.AuthModule
+            auth_module_1.AuthModule,
+            cloudinary_module_1.CloudinaryModule
         ],
         controllers: [],
         providers: [

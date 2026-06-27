@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseDatePipe, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { VenuesService } from './venues.service';
 import { GetVenueFilterDto } from './dto/get-venue-filter.dto';
 import { CreateVenueCategoryDto } from './dto/create-category-venue.dto';
@@ -15,6 +15,8 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/user.enums';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import type { JwtUser } from 'src/auth/get-user.models';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import type { Multer } from 'multer';
 
 @Controller('venues')
 export class VenuesController {
@@ -37,8 +39,26 @@ export class VenuesController {
     @UseGuards(RolesGuard)
     @Roles(UserRole.OWNER)
     @Post()
-    createVenue(@Body() createVenueDto: CreateVenueDto){
-        return this.venueService.createVenue(createVenueDto);
+    @UseInterceptors(FilesInterceptor('images', 10, {
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10 MB
+        },
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                return cb(
+                    new BadRequestException(
+                        "Only JPG, JPEG, PNG and WEBP images are allowed",
+                    ),
+                    false,
+                );
+            }
+
+            cb(null, true);
+        },
+    }))
+    createVenue(@GetUser() user: JwtUser, @UploadedFiles() files: Array<Express.Multer.File>,
+                @Body() createVenueDto: CreateVenueDto){
+        return this.venueService.createVenue(user.id, createVenueDto, files);
     }
 
     @UseGuards(RolesGuard)
@@ -136,6 +156,30 @@ export class VenuesController {
     @Patch(":id")
     updateVenue(@GetUser() user: JwtUser, @Param('id', new ParseUUIDPipe()) id: string, @Body() updatevenueDto: UpdateVenueDto){
         return this.venueService.updateVenue(user, id, updatevenueDto);
+    }
+
+    @UseGuards(RolesGuard)
+    @Roles(UserRole.OWNER)
+    @Patch(":id/photos")
+    @UseInterceptors(FilesInterceptor('images', 10, {
+        limits: {
+            fileSize: 10 * 1024 * 1024, // 10 MB
+        },
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                return cb(
+                    new BadRequestException(
+                        "Only JPG, JPEG, PNG and WEBP images are allowed",
+                    ),
+                    false,
+                );
+            }
+
+            cb(null, true);
+        },
+    }))
+    updateVenuePhotos(@GetUser() user: JwtUser, @Param('id', new ParseUUIDPipe()) id: string, @UploadedFiles() files: Express.Multer.File[],){
+        return this.venueService.updateVenuePhotos(user, id, files);
     }
 
     @UseGuards(RolesGuard)

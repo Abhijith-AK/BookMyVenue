@@ -18,7 +18,6 @@ class CreateVenueDto {
     description;
     address;
     district;
-    photos;
     minCapacity;
     maxCapacity;
     tags;
@@ -31,7 +30,6 @@ class CreateVenueDto {
     slotDurationMinutes;
     pricePerSlot;
     bookingBufferMinutes;
-    ownerId;
     categoryIds;
     amenityIds;
 }
@@ -59,14 +57,6 @@ __decorate([
     (0, class_validator_1.IsEnum)(venue_enums_1.Districts),
     __metadata("design:type", String)
 ], CreateVenueDto.prototype, "district", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.ArrayNotEmpty)(),
-    (0, class_validator_1.ArrayMaxSize)(20),
-    (0, class_validator_1.IsString)({ each: true }),
-    __metadata("design:type", Array)
-], CreateVenueDto.prototype, "photos", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_transformer_1.Type)(() => Number),
@@ -147,11 +137,6 @@ __decorate([
     (0, class_validator_1.IsIn)([0, 15, 30, 60, 120]),
     __metadata("design:type", Number)
 ], CreateVenueDto.prototype, "bookingBufferMinutes", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsUUID)('4'),
-    __metadata("design:type", String)
-], CreateVenueDto.prototype, "ownerId", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsArray)(),

@@ -10,7 +10,7 @@ export declare class Venue {
     description: string;
     address: string;
     district: Districts;
-    photos: string[];
+    photos: Pho[];
     minCapacity: number;
     maxCapacity: number;
     tags?: string[];

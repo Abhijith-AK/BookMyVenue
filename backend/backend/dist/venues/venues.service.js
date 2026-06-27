@@ -23,18 +23,21 @@ const venue_service_entity_1 = require("./enities/venue-service.entity");
 const venue_category_entity_1 = require("./enities/venue-category.entity");
 const venue_amenity_entity_1 = require("./enities/venue-amenity.entity");
 const user_enums_1 = require("../users/user.enums");
+const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
 let VenuesService = class VenuesService {
     venueRepository;
     venueSlotRepository;
     venueServiceRepository;
     venueCategoryRepository;
     venueAmenityRepository;
-    constructor(venueRepository, venueSlotRepository, venueServiceRepository, venueCategoryRepository, venueAmenityRepository) {
+    cloudinaryService;
+    constructor(venueRepository, venueSlotRepository, venueServiceRepository, venueCategoryRepository, venueAmenityRepository, cloudinaryService) {
         this.venueRepository = venueRepository;
         this.venueSlotRepository = venueSlotRepository;
         this.venueServiceRepository = venueServiceRepository;
         this.venueCategoryRepository = venueCategoryRepository;
         this.venueAmenityRepository = venueAmenityRepository;
+        this.cloudinaryService = cloudinaryService;
     }
     weekDays = [
         venue_enums_1.WeekDays.SUNDAY,
@@ -201,13 +204,15 @@ let VenuesService = class VenuesService {
         if (result.affected === 0)
             throw new common_1.NotFoundException(`Service ${id} not found`);
     }
-    async createVenue(createVenueDto) {
+    async createVenue(ownerId, createVenueDto, files) {
         const { categoryIds, amenityIds, ...venueData } = createVenueDto;
         const categories = [];
         const amenities = [];
         const { maxCapacity, minCapacity, availableFrom, availableUntil, openingTime, closingTime, tags, holidays, weekDayOff } = venueData;
         if (maxCapacity < minCapacity || availableFrom > availableUntil || this.toMinutes(openingTime) > this.toMinutes(closingTime))
             throw new common_1.BadRequestException("Invalid venue details");
+        if (!files || files.length === 0)
+            throw new common_1.BadRequestException("At least one image is required");
         for (const categoryId of categoryIds) {
             const category = await this.venueCategoryRepository.findOne({ where: { id: categoryId } });
             if (!category || !category.isActive)
@@ -222,10 +227,12 @@ let VenuesService = class VenuesService {
             amenities.push(amenity);
         }
         ;
+        const photos = await Promise.all(files.map(file => this.cloudinaryService.uploadImage(file)));
         const venue = this.venueRepository.create({
             ...venueData,
             categories,
             amenities,
+            photos,
             weekDayOff: weekDayOff ? weekDayOff : [],
             holidays: holidays ? holidays : [],
             tags: tags ? tags : [],
@@ -235,7 +242,7 @@ let VenuesService = class VenuesService {
         return venue;
     }
     async updateVenue(user, id, updateVenueDto) {
-        const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, openingTime, photos, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
+        const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, openingTime, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
         const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
         if (!venue)
             throw new common_1.NotFoundException(`service with ${id} not found.`);
@@ -301,8 +308,6 @@ let VenuesService = class VenuesService {
                 throw new common_1.BadRequestException("Invalid venue details - openingTime");
         }
         ;
-        if (photos)
-            venue.photos = photos;
         if (pricePerSlot !== undefined)
             venue.pricePerSlot = pricePerSlot;
         if (slotDurationMinutes !== undefined)
@@ -335,6 +340,20 @@ let VenuesService = class VenuesService {
         }
         await this.venueRepository.save(venue);
         return venue;
+    }
+    async updateVenuePhotos(user, id, files) {
+        const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
+        if (!venue)
+            throw new common_1.NotFoundException(`service with ${id} not found.`);
+        if (venue.ownerId !== user.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
+        if (!files || files.length === 0)
+            throw new common_1.BadRequestException("At least one image is required");
+        await Promise.all(venue.photos.map(photo => this.cloudinaryService.deleteImage(photo.publicId)));
+        const photos = await Promise.all(files.map(file => this.cloudinaryService.uploadImage(file)));
+        venue.photos = photos;
+        await this.venueRepository.save(venue);
+        return venue.photos;
     }
     async deleteVenue(user, id) {
         const venue = await this.getVenueById(id);
@@ -425,6 +444,7 @@ exports.VenuesService = VenuesService = __decorate([
         typeorm_2.Repository,
         typeorm_2.Repository,
         typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        cloudinary_service_1.CloudinaryService])
 ], VenuesService);
 //# sourceMappingURL=venues.service.js.map

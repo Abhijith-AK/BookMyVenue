@@ -15,13 +15,16 @@ import { VenueService } from './enities/venue-service.entity';
 import { VenueCategory } from './enities/venue-category.entity';
 import { VenueAmenity } from './enities/venue-amenity.entity';
 import { JwtUser } from "../auth/get-user.models";
+import { CloudinaryService } from "../cloudinary/cloudinary.service";
+import { Photos } from './photos.model';
 export declare class VenuesService {
     private venueRepository;
     private venueSlotRepository;
     private venueServiceRepository;
     private venueCategoryRepository;
     private venueAmenityRepository;
-    constructor(venueRepository: Repository<Venue>, venueSlotRepository: Repository<VenueSlot>, venueServiceRepository: Repository<VenueService>, venueCategoryRepository: Repository<VenueCategory>, venueAmenityRepository: Repository<VenueAmenity>);
+    private cloudinaryService;
+    constructor(venueRepository: Repository<Venue>, venueSlotRepository: Repository<VenueSlot>, venueServiceRepository: Repository<VenueService>, venueCategoryRepository: Repository<VenueCategory>, venueAmenityRepository: Repository<VenueAmenity>, cloudinaryService: CloudinaryService);
     private weekDays;
     private toMinutes;
     private toDate;
@@ -41,8 +44,9 @@ export declare class VenuesService {
     createService(serviceDto: CreateVenueServiceDto): Promise<VenueService>;
     updateService(id: string, updateServiceDto: UpdateVenueServiceDto): Promise<VenueService>;
     deleteService(id: string): Promise<void>;
-    createVenue(createVenueDto: CreateVenueDto): Promise<Venue>;
+    createVenue(ownerId: string, createVenueDto: CreateVenueDto, files: Array<Express.Multer.File>): Promise<Venue>;
     updateVenue(user: JwtUser, id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>;
+    updateVenuePhotos(user: JwtUser, id: string, files: Express.Multer.File[]): Promise<Photos[]>;
     deleteVenue(user: JwtUser, id: string): Promise<void>;
     createCategory(createCategoryDto: CreateVenueCategoryDto): Promise<VenueCategory>;
     deleteCategory(id: string): Promise<void>;

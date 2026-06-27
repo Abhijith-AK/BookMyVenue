@@ -18,7 +18,6 @@ class UpdateVenueDto {
     description;
     address;
     district;
-    photos;
     minCapacity;
     maxCapacity;
     tags;
@@ -58,14 +57,6 @@ __decorate([
     (0, class_validator_1.IsEnum)(venue_enums_1.Districts),
     __metadata("design:type", String)
 ], UpdateVenueDto.prototype, "district", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.ArrayNotEmpty)(),
-    (0, class_validator_1.ArrayMaxSize)(20),
-    (0, class_validator_1.IsString)({ each: true }),
-    __metadata("design:type", Array)
-], UpdateVenueDto.prototype, "photos", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),

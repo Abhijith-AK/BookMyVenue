@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -34,7 +35,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ReviewsModule,
     OwnerModule,
     AdminModule,
-    AuthModule
+    AuthModule,
+    CloudinaryModule
   ],
   controllers: [],
   providers: [

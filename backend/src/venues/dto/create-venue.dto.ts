@@ -23,13 +23,6 @@ export class CreateVenueDto {
     district!: Districts;
 
     @IsNotEmpty()
-    @IsArray()
-    @ArrayNotEmpty()
-    @ArrayMaxSize(20)
-    @IsString({each: true})
-    photos!: string[];
-
-    @IsNotEmpty()
     @Type(() => Number)
     @IsNumber()
     @Min(1)
@@ -96,10 +89,6 @@ export class CreateVenueDto {
     @IsNumber()
     @IsIn([0, 15, 30, 60, 120])
     bookingBufferMinutes!: number;
-
-    @IsNotEmpty()
-    @IsUUID('4')
-    ownerId!: string;
 
     @IsNotEmpty()
     @IsArray()

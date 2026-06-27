@@ -29,6 +29,7 @@ const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const user_enums_1 = require("../users/user.enums");
 const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
+const platform_express_1 = require("@nestjs/platform-express");
 let VenuesController = class VenuesController {
     venueService;
     constructor(venueService) {
@@ -40,8 +41,8 @@ let VenuesController = class VenuesController {
     getAllVenuesByOwner(ownerId) {
         return this.venueService.getVenueForOwners(ownerId);
     }
-    createVenue(createVenueDto) {
-        return this.venueService.createVenue(createVenueDto);
+    createVenue(user, files, createVenueDto) {
+        return this.venueService.createVenue(user.id, createVenueDto, files);
     }
     getAllCategories() {
         return this.venueService.getAllCategories();
@@ -86,6 +87,9 @@ let VenuesController = class VenuesController {
     updateVenue(user, id, updatevenueDto) {
         return this.venueService.updateVenue(user, id, updatevenueDto);
     }
+    updateVenuePhotos(user, id, files) {
+        return this.venueService.updateVenuePhotos(user, id, files);
+    }
     deleteVenue(user, id) {
         return this.venueService.deleteVenue(user, id);
     }
@@ -113,9 +117,23 @@ __decorate([
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10, {
+        limits: {
+            fileSize: 10 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                return cb(new common_1.BadRequestException("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
+            }
+            cb(null, true);
+        },
+    })),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_venue_dto_1.CreateVenueDto]),
+    __metadata("design:paramtypes", [Object, Array,
+        create_venue_dto_1.CreateVenueDto]),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "createVenue", null);
 __decorate([
@@ -247,6 +265,28 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, update_venue_dto_1.UpdateVenueDto]),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "updateVenue", null);
+__decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
+    (0, common_1.Patch)(":id/photos"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FilesInterceptor)('images', 10, {
+        limits: {
+            fileSize: 10 * 1024 * 1024,
+        },
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                return cb(new common_1.BadRequestException("Only JPG, JPEG, PNG and WEBP images are allowed"), false);
+            }
+            cb(null, true);
+        },
+    })),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Array]),
+    __metadata("design:returntype", void 0)
+], VenuesController.prototype, "updateVenuePhotos", null);
 __decorate([
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER, user_enums_1.UserRole.ADMIN),

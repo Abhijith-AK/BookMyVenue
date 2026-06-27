@@ -16,12 +16,13 @@ const venue_amenity_entity_1 = require("./enities/venue-amenity.entity");
 const venue_category_entity_1 = require("./enities/venue-category.entity");
 const venue_service_entity_1 = require("./enities/venue-service.entity");
 const venue_slot_entity_1 = require("./enities/venue-slot.entity");
+const cloudinary_module_1 = require("../cloudinary/cloudinary.module");
 let VenuesModule = class VenuesModule {
 };
 exports.VenuesModule = VenuesModule;
 exports.VenuesModule = VenuesModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([venue_entity_1.Venue, venue_amenity_entity_1.VenueAmenity, venue_category_entity_1.VenueCategory, venue_service_entity_1.VenueService, venue_slot_entity_1.VenueSlot])],
+        imports: [typeorm_1.TypeOrmModule.forFeature([venue_entity_1.Venue, venue_amenity_entity_1.VenueAmenity, venue_category_entity_1.VenueCategory, venue_service_entity_1.VenueService, venue_slot_entity_1.VenueSlot]), cloudinary_module_1.CloudinaryModule],
         controllers: [venues_controller_1.VenuesController],
         providers: [venues_service_1.VenuesService],
         exports: [venues_service_1.VenuesService]

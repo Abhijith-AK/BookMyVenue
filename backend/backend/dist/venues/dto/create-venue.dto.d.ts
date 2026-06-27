@@ -4,7 +4,6 @@ export declare class CreateVenueDto {
     description: string;
     address: string;
     district: Districts;
-    photos: string[];
     minCapacity: number;
     maxCapacity: number;
     tags?: string[];
@@ -17,7 +16,6 @@ export declare class CreateVenueDto {
     slotDurationMinutes: number;
     pricePerSlot: number;
     bookingBufferMinutes: number;
-    ownerId: string;
     categoryIds: string[];
     amenityIds: string[];
 }

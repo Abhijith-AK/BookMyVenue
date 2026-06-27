@@ -23,13 +23,6 @@ export class UpdateVenueDto{
         district?: Districts;
     
         @IsOptional()
-        @IsArray()
-        @ArrayNotEmpty()
-        @ArrayMaxSize(20)
-        @IsString({each: true})
-        photos?: string[];
-    
-        @IsOptional()
         @Type(() => Number)
         @IsNumber()
         @Min(1)

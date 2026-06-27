@@ -19,6 +19,8 @@ import { VenueCategory } from './enities/venue-category.entity';
 import { VenueAmenity } from './enities/venue-amenity.entity';
 import { JwtUser } from 'src/auth/get-user.models';
 import { UserRole } from 'src/users/user.enums';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { Photos } from './photos.model';
 
 @Injectable()
 export class VenuesService {
@@ -33,6 +35,7 @@ export class VenuesService {
         private venueCategoryRepository: Repository<VenueCategory>,
         @InjectRepository(VenueAmenity)
         private venueAmenityRepository: Repository<VenueAmenity>,
+        private cloudinaryService: CloudinaryService
     ){}
 
     private weekDays = [
@@ -219,13 +222,15 @@ export class VenuesService {
         if(result.affected === 0) throw new NotFoundException(`Service ${id} not found`);
     }
     // create venue
-    async createVenue(createVenueDto: CreateVenueDto): Promise<Venue> {
+    async createVenue(ownerId: string, createVenueDto: CreateVenueDto, files: Array<Express.Multer.File>,): Promise<Venue> {
         const {categoryIds, amenityIds, ...venueData} = createVenueDto;
         const categories: VenueCategory[] = [];
         const amenities: VenueAmenity[] = [];
         const {maxCapacity, minCapacity, availableFrom, availableUntil, openingTime, closingTime, tags, holidays, weekDayOff} = venueData;
         if(maxCapacity < minCapacity || availableFrom > availableUntil || this.toMinutes(openingTime) > this.toMinutes(closingTime)) 
             throw new BadRequestException("Invalid venue details");
+        if (!files || files.length === 0) 
+            throw new BadRequestException("At least one image is required");
         for (const categoryId of categoryIds){
             const category = await this.venueCategoryRepository.findOne({where: {id: categoryId}});
             if(!category || !category.isActive) throw new BadRequestException(`Invalid Category ${categoryId}`);
@@ -237,10 +242,15 @@ export class VenuesService {
             amenities.push(amenity)
         };
 
+        const photos: Photos[] = await Promise.all(
+            files.map(file => this.cloudinaryService.uploadImage(file)),
+        );
+
         const venue: Venue = this.venueRepository.create({
             ...venueData,
             categories,
             amenities,
+            photos,
             weekDayOff: weekDayOff ? weekDayOff : [],
             holidays: holidays ? holidays : [],
             tags: tags ? tags : [],
@@ -264,7 +274,6 @@ export class VenuesService {
             minCapacity,
             name,
             openingTime,
-            photos,
             pricePerSlot,
             slotDurationMinutes,
             tags,
@@ -324,7 +333,6 @@ export class VenuesService {
             else
                 throw new BadRequestException("Invalid venue details - openingTime");
         };
-        if(photos) venue.photos = photos;
         if(pricePerSlot !== undefined) venue.pricePerSlot = pricePerSlot;
         if(slotDurationMinutes !== undefined) venue.slotDurationMinutes = slotDurationMinutes;
         if(tags) venue.tags = tags;
@@ -350,6 +358,26 @@ export class VenuesService {
 
         await this.venueRepository.save(venue);
         return venue;
+    }
+    // update Venue Photos
+    async updateVenuePhotos(user: JwtUser, id: string, files: Express.Multer.File[]){
+        const venue = await this.venueRepository.findOne({where: {id}, relations:{ categories:true, amenities:true }});
+        if(!venue) throw new NotFoundException(`service with ${id} not found.`);
+        if(venue.ownerId !== user.id && user.role !== UserRole.ADMIN) throw new ForbiddenException();
+        if (!files || files.length === 0) 
+            throw new BadRequestException("At least one image is required");
+
+        // delete existing images
+        await Promise.all(venue.photos.map(photo => this.cloudinaryService.deleteImage(photo.publicId)));
+
+        // upload new images
+        const photos: Photos[] = await Promise.all(
+            files.map(file => this.cloudinaryService.uploadImage(file)),
+        );
+
+        venue.photos = photos;
+        await this.venueRepository.save(venue);
+        return venue.photos;
     }
     // delete venue
     async deleteVenue(user: JwtUser, id: string): Promise<void> {

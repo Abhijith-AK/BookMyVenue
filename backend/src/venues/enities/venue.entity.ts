@@ -3,6 +3,7 @@ import { Districts, VenueStatus, WeekDays } from "../enums/venue.enums";
 import { User } from "src/users/user.entity";
 import { VenueCategory } from "./venue-category.entity";
 import { VenueAmenity } from "./venue-amenity.entity";
+import { Photos } from "../photos.model";
 
 @Entity()
 export class Venue{
@@ -34,7 +35,7 @@ export class Venue{
     district!: Districts;
 
     @Column("text", { array: true})
-    photos!: string[];
+    photos!: Photos[];
 
     @Column("int")
     minCapacity!: number;
