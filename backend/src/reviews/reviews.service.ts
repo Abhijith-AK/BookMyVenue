@@ -9,6 +9,8 @@ import { Booking } from 'src/bookings/booking.entity';
 import { BookingsService } from 'src/bookings/bookings.service';
 import { BookingStatus } from 'src/bookings/enums/booking.enums';
 import { Venue } from 'src/venues/enities/venue.entity';
+import { JwtUser } from 'src/auth/get-user.models';
+import { UserRole } from 'src/users/user.enums';
 
 @Injectable()
 export class ReviewsService {
@@ -41,11 +43,11 @@ export class ReviewsService {
         return review;
     }
     // create review
-    async createReview(createReviewDto: CreateReviewDto){
-        // TODO: validate customer
+    async createReview(customerId: string, createReviewDto: CreateReviewDto){
         const existing = await this.reviewRepository.findOne({where: {bookingId: createReviewDto.bookingId}});
         if(existing) throw new BadRequestException(`review already exists for booking ${createReviewDto.bookingId}`);
         const booking = await this.bookingsService.getBookingById(createReviewDto.bookingId);
+        if(booking.customerId !== customerId) throw new ForbiddenException();
         if(booking.status !== BookingStatus.COMPLETED) throw new ForbiddenException("Only completed booking can add reviews");
         if(booking.venueId !== createReviewDto.venueId) throw new BadRequestException("Venue does not matched");
         const review = this.reviewRepository.create({
@@ -55,19 +57,22 @@ export class ReviewsService {
         return review;
     }
     // update review
-    async updateReview( id: string, updateReviewDto: UpdateReviewDto ){
+    async updateReview(customerId: string, id: string, updateReviewDto: UpdateReviewDto ){
         const {comment, rating} = updateReviewDto;
         const review = await this.reviewRepository.findOne({where: {id}});
-        if(!review) throw new NotFoundException(`review ${id} not found`)
+        if(customerId !== review?.customerId) throw new ForbiddenException();
+        if(!review) throw new NotFoundException(`review ${id} not found`);
         if(rating !== undefined) review.rating = rating;
         if(comment !== undefined) review.comment = comment;
         await this.reviewRepository.save(review);
         return review;
     }
     // delete review
-    async deleteReview(id: string){
+    async deleteReview(user: JwtUser, id: string){
+        const review = await this.reviewRepository.findOne({where: {id}});
+        if(!review) throw new NotFoundException(`review ${id} not found`)
+        if(review.customerId !== user.id && user.role !== UserRole.ADMIN) throw new ForbiddenException();
         const result = await this.reviewRepository.delete(id);
-        if(result.affected === 0) throw new NotFoundException(`review ${id} not found`)
     }
     // get reviews for owner
     async getReviewsForOwner(ownerId: string){

@@ -1,18 +1,24 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Booking } from 'src/bookings/booking.entity';
 import { BookingsService } from 'src/bookings/bookings.service';
 import { BookingStatus } from 'src/bookings/enums/booking.enums';
-import { ReviewsService } from 'src/reviews/reviews.service';
+import { Review } from 'src/reviews/review.entity';
 import { UserRole } from 'src/users/user.enums';
 import { UsersService } from 'src/users/users.service';
 import { VenueStatus } from 'src/venues/enums/venue.enums';
 import { VenuesService } from 'src/venues/venues.service';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AdminService {
         constructor(
+        @InjectRepository(Booking)
+        private bookingRepository: Repository<Booking>,
+        @InjectRepository(Review)
+        private reviewRepository: Repository<Review>,
         private venuesService: VenuesService,
         private bookingsService: BookingsService,
-        private reviewsService: ReviewsService,
         private usersService: UsersService
     ){}
     // admin dashboard
@@ -42,17 +48,21 @@ export class AdminService {
             pendingVenueApprovals,
         }
     }
-    // recent bookings
-    async getRecentBookings(){
-        const bookings = await this.bookingsService.getAllBookings();
-        return bookings
-                .filter(b => b.status === BookingStatus.CONFIRMED)
-                .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10);
+   // recent bookings
+    async getRecentBookings() {
+        return await this.bookingRepository.createQueryBuilder("booking")
+            .where("booking.status = :status", { status: BookingStatus.CONFIRMED })
+            .orderBy("booking.createdAt", "DESC")
+            .take(10)
+            .getMany();
     }
+
     // recent reviews
-    async getRecentReviews(){
-        const reviews = await this.reviewsService.getAllReviews();
-        return reviews.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10);
+    async getRecentReviews() {
+        return await this.reviewRepository.createQueryBuilder("review")
+            .orderBy("review.createdAt", "DESC")
+            .take(10)
+            .getMany();
     }
 
 }

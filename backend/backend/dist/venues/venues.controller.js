@@ -25,6 +25,10 @@ const update_service_venue_dto_1 = require("./dto/update-service-venue.dto");
 const create_venue_dto_1 = require("./dto/create-venue.dto");
 const update_venue_dto_1 = require("./dto/update-venue.dto");
 const get_venue_id_dto_1 = require("./dto/get-venue-id.dto");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const user_enums_1 = require("../users/user.enums");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let VenuesController = class VenuesController {
     venueService;
     constructor(venueService) {
@@ -79,15 +83,17 @@ let VenuesController = class VenuesController {
     getVenueById(id, query) {
         return this.venueService.getVenueById(id, query);
     }
-    updateVenue(id, updatevenueDto) {
-        return this.venueService.updateVenue(id, updatevenueDto);
+    updateVenue(user, id, updatevenueDto) {
+        return this.venueService.updateVenue(user, id, updatevenueDto);
     }
-    deleteVenue(id) {
-        return this.venueService.deleteVenue(id);
+    deleteVenue(user, id) {
+        return this.venueService.deleteVenue(user, id);
     }
 };
 exports.VenuesController = VenuesController;
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN, user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -95,6 +101,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getAllVenues", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Get)('/owner/:ownerId'),
     __param(0, (0, common_1.Param)('ownerId', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -102,6 +110,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getAllVenuesByOwner", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -109,12 +119,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "createVenue", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER, user_enums_1.UserRole.ADMIN),
     (0, common_1.Get)("categories"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getAllCategories", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Post)("categories"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -122,6 +136,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "createCategory", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Patch)("categories/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
@@ -130,6 +146,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "updateCategory", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Delete)("categories/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -137,12 +155,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "deleteCategory", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER, user_enums_1.UserRole.ADMIN),
     (0, common_1.Get)("amenities"),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getAllAmenities", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Post)("amenities"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -150,6 +172,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "createAmenity", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Patch)("amenities/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
@@ -158,6 +182,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "updateAmenity", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Delete)("amenities/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -165,6 +191,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "deleteAmenity", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Get)(":venueId/services"),
     __param(0, (0, common_1.Param)('venueId', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -172,6 +200,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getAllServices", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Post)(":venueId/services"),
     __param(0, (0, common_1.Param)('venueId', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
@@ -180,6 +210,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "createService", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Patch)(":venueId/services/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __param(1, (0, common_1.Body)()),
@@ -188,6 +220,8 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "updateService", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Delete)(":venueId/services/:id"),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -203,18 +237,24 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "getVenueById", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER, user_enums_1.UserRole.ADMIN),
     (0, common_1.Patch)(":id"),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_venue_dto_1.UpdateVenueDto]),
+    __metadata("design:paramtypes", [Object, String, update_venue_dto_1.UpdateVenueDto]),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "updateVenue", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER, user_enums_1.UserRole.ADMIN),
     (0, common_1.Delete)(":id"),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], VenuesController.prototype, "deleteVenue", null);
 exports.VenuesController = VenuesController = __decorate([

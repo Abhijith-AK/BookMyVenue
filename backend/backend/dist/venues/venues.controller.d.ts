@@ -9,6 +9,7 @@ import { UpdateVenueServiceDto } from './dto/update-service-venue.dto';
 import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 import { GetVenueByIdDto } from './dto/get-venue-id.dto';
+import type { JwtUser } from "../auth/get-user.models";
 export declare class VenuesController {
     private venueService;
     constructor(venueService: VenuesService);
@@ -32,6 +33,6 @@ export declare class VenuesController {
         slots: import("./enities/venue-slot.entity").VenueSlot[];
         services: import("./enities/venue-service.entity").VenueService[];
     }>;
-    updateVenue(id: string, updatevenueDto: UpdateVenueDto): Promise<import("./enities/venue.entity").Venue>;
-    deleteVenue(id: string): Promise<void>;
+    updateVenue(user: JwtUser, id: string, updatevenueDto: UpdateVenueDto): Promise<import("./enities/venue.entity").Venue>;
+    deleteVenue(user: JwtUser, id: string): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import Razorpay from 'razorpay';
 import { Payment } from './payment.entity';
@@ -7,6 +7,7 @@ import { PaymentStatus } from './enums/payment.enum';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
 import * as crypto from "crypto";
 import { BookingsService } from 'src/bookings/bookings.service';
+import { JwtUser } from 'src/auth/get-user.models';
 
 @Injectable()
 export class PaymentsService {
@@ -95,9 +96,15 @@ export class PaymentsService {
         return true;
     }
     // payment fail
-    async failedPayment(orderId: string){
+    async failedPayment(orderId: string, user?: JwtUser){
         const paymentRecord = await this.paymentRepository.findOne({where: {razorpayOrderId: orderId}});
         if(!paymentRecord) throw new BadRequestException(`Invalid Order ${orderId}`)
+
+        const booking = await this.bookingService.getBookingById(paymentRecord.bookingId);
+
+        if(user){
+            if (booking.customerId !== user.id) throw new ForbiddenException();
+        }   
 
         if (paymentRecord.status === PaymentStatus.FAILED)
             return true;

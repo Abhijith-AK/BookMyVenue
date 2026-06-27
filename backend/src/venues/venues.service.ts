@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { VenueStatus, WeekDays, SlotStatus } from './enums/venue.enums';
 import { GetVenueFilterDto } from './dto/get-venue-filter.dto';
 import { CreateVenueServiceDto } from './dto/create-service-venue.dto';
@@ -17,6 +17,8 @@ import { VenueSlot } from './enities/venue-slot.entity';
 import { VenueService } from './enities/venue-service.entity';
 import { VenueCategory } from './enities/venue-category.entity';
 import { VenueAmenity } from './enities/venue-amenity.entity';
+import { JwtUser } from 'src/auth/get-user.models';
+import { UserRole } from 'src/users/user.enums';
 
 @Injectable()
 export class VenuesService {
@@ -167,7 +169,7 @@ export class VenuesService {
     // -------OWNER-----------
     // list venues by owner
     async getVenueForOwners(ownerId: string): Promise<Venue[]> {
-        return await this.venueRepository.find({where: {ownerId},   relations:{ categories:true, amenities:true }});
+        return await this.venueRepository.find({where: {ownerId}, relations:{ categories:true, amenities:true }});
     }
     // list categorys
     async getAllCategories(): Promise<VenueCategory[]> {
@@ -248,7 +250,7 @@ export class VenuesService {
         return venue;
     }
     // update venue
-    async updateVenue(id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>{
+    async updateVenue(user: JwtUser, id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>{
         const { 
             address,
             availableFrom, 
@@ -271,7 +273,7 @@ export class VenuesService {
             categoryIds } = updateVenueDto;
         const venue = await this.venueRepository.findOne({where: {id}, relations:{ categories:true, amenities:true }});
         if(!venue) throw new NotFoundException(`service with ${id} not found.`);
-        // if(venue.ownerId !== ownerId) throw new ForbiddenException();
+        if(venue.ownerId !== user.id && user.role !== UserRole.ADMIN) throw new ForbiddenException();
 
         const finalAvailableFrom = availableFrom ?? venue.availableFrom;
         const finalAvailableUntil = availableUntil ?? venue.availableUntil;
@@ -350,7 +352,9 @@ export class VenuesService {
         return venue;
     }
     // delete venue
-    async deleteVenue(id: string): Promise<void> {
+    async deleteVenue(user: JwtUser, id: string): Promise<void> {
+        const venue = await this.getVenueById(id);
+        if(venue.venue.ownerId !== user.id && user.role !== UserRole.ADMIN) throw new ForbiddenException();
         const result = await this.venueRepository.delete(id);
         if(result.affected === 0) throw new NotFoundException(`Venue with ID ${id} not found.`);
     }

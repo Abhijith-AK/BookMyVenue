@@ -15,7 +15,6 @@ const class_validator_1 = require("class-validator");
 class CreateReviewDto {
     bookingId;
     venueId;
-    customerId;
     rating;
     comment;
 }
@@ -30,11 +29,6 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateReviewDto.prototype, "venueId", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsUUID)(),
-    __metadata("design:type", String)
-], CreateReviewDto.prototype, "customerId", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsInt)(),

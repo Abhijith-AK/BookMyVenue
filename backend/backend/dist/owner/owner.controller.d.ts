@@ -1,8 +1,9 @@
 import { OwnerService } from './owner.service';
+import type { JwtUser } from "../auth/get-user.models";
 export declare class OwnerController {
     private ownerService;
     constructor(ownerService: OwnerService);
-    getDashboard(user: any): Promise<{
+    getDashboard(user: JwtUser): Promise<{
         totalVenues: number;
         totalBookings: number;
         completedBookings: number;
@@ -12,6 +13,6 @@ export declare class OwnerController {
         averageRating: number;
         totalReviews: number;
     }>;
-    getRecentBookings(user: any): Promise<import("../bookings/booking.entity").Booking[]>;
-    getRecentReviews(user: any): Promise<any[]>;
+    getRecentBookings(user: JwtUser): Promise<import("../bookings/booking.entity").Booking[]>;
+    getRecentReviews(user: JwtUser): Promise<any[]>;
 }

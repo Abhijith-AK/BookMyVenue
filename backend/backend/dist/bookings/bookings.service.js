@@ -26,6 +26,7 @@ const payments_service_1 = require("../payments/payments.service");
 const schedule_1 = require("@nestjs/schedule");
 const payment_entity_1 = require("../payments/payment.entity");
 const payment_enum_1 = require("../payments/enums/payment.enum");
+const user_enums_1 = require("../users/user.enums");
 let BookingsService = class BookingsService {
     dataSource;
     bookingRepository;
@@ -72,6 +73,8 @@ let BookingsService = class BookingsService {
     }
     async getBookingByOwner(ownerId) {
         const venues = await this.venueService.getVenueForOwners(ownerId);
+        if (!venues.length)
+            throw new common_1.NotFoundException(`No booking found for OwnerID ${ownerId}`);
         const venueIds = venues.map(v => v.id);
         const bookings = await this.bookingRepository.createQueryBuilder("booking")
             .leftJoinAndSelect("booking.venue", "venue")
@@ -119,15 +122,14 @@ let BookingsService = class BookingsService {
             grandTotal
         };
     }
-    async createBooking(createBookingDto) {
+    async createBooking(customerId, createBookingDto) {
         try {
             const booking = await this.dataSource.transaction(async (manager) => {
                 const bookingRepository = manager.getRepository(booking_entity_1.Booking);
                 const venueSlotRepository = manager.getRepository(venue_slot_entity_1.VenueSlot);
-                const { customerId, ...quoteDto } = createBookingDto;
-                const { guestCount, slots, venueId } = quoteDto;
+                const { guestCount, slots, venueId } = createBookingDto;
                 await this.userService.getUserById(customerId);
-                const quote = await this.createBookingQuote(quoteDto, manager);
+                const quote = await this.createBookingQuote(createBookingDto, manager);
                 const booking = bookingRepository.create({
                     customerId,
                     guestCount,
@@ -220,10 +222,14 @@ let BookingsService = class BookingsService {
             }
         }
     }
-    async cancelBooking(bookingId, reason) {
+    async cancelBooking(bookingId, user, reason) {
         const booking = await this.bookingRepository.findOne({ where: { id: bookingId }, relations: { slots: true, venue: true } });
         if (!booking)
             throw new common_1.NotFoundException(`Booking ID ${bookingId} not found`);
+        if (user.role === user_enums_1.UserRole.OWNER && booking.venue.ownerId !== user.id)
+            throw new common_1.ForbiddenException();
+        if (user.role === user_enums_1.UserRole.CUSTOMER && booking.customerId !== user.id)
+            throw new common_1.ForbiddenException();
         if (booking.status !== booking_enums_1.BookingStatus.CONFIRMED)
             throw new common_1.BadRequestException("Only confirmed bookings can be cancelled");
         const firstSlot = booking.slots.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0];
@@ -239,7 +245,6 @@ let BookingsService = class BookingsService {
         const bookingRepository = manager.getRepository(booking_entity_1.Booking);
         const venueSlotRepository = manager.getRepository(venue_slot_entity_1.VenueSlot);
         const booking = await bookingRepository.findOne({ where: { id: bookingId }, relations: { slots: true } });
-        const slots = booking?.slots;
         booking.status = booking_enums_1.BookingStatus.CANCELLED;
         if (reason)
             booking.cancellationReason = reason;

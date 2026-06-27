@@ -1,21 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { BookingsService } from 'src/bookings/bookings.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Booking } from 'src/bookings/booking.entity';
 import { BookingStatus } from 'src/bookings/enums/booking.enums';
+import { Review } from 'src/reviews/review.entity';
 import { ReviewsService } from 'src/reviews/reviews.service';
-import { VenuesService } from 'src/venues/venues.service';
+import { User } from 'src/users/user.entity';
+import { Venue } from 'src/venues/enities/venue.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class OwnerService {
     constructor(
-        private venuesService: VenuesService,
-        private bookingsService: BookingsService,
-        private reviewsService: ReviewsService
+        @InjectRepository(Venue)
+        private venueRepository: Repository<Venue>,
+        @InjectRepository(Booking)
+        private bookingRepository: Repository<Booking>,
+        @InjectRepository(Review)
+        private reviewRepository: Repository<Review>,
+        private reviewService: ReviewsService
     ){}
     // owner dashboard
     async getOwnerDashboard(ownerId: string) {
-        const venues = await this.venuesService.getVenueForOwners(ownerId);
-        const bookings = await this.bookingsService.getBookingByOwner(ownerId);
-        const reviews = await this.reviewsService.getReviewsForOwner(ownerId);
+        const venues = await this.venueRepository.find({where: {ownerId}});
+        const bookings = await this.bookingRepository.createQueryBuilder("booking").leftJoinAndSelect("booking.venue", "venue")
+                                    .where("venue.ownerId = :ownerId", {ownerId}).getMany();
+        const reviews = await this.reviewService.getReviewsForOwner(ownerId);
 
         const totalVenues = venues.length;
         const totalBookings = bookings.length;
@@ -40,12 +49,32 @@ export class OwnerService {
     }
     // recent bookings
     async getRecentBookings(ownerId: string){
-        const bookings = await this.bookingsService.getBookingByOwner(ownerId);
-        return bookings.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).splice(0, 10);
+        const bookings = await this.bookingRepository.createQueryBuilder("booking").leftJoinAndSelect("booking.venue", "venue")
+                                    .where("venue.ownerId = :ownerId", {ownerId})
+                                    .orderBy("booking.createdAt", "DESC")
+                                    .take(10)
+                                    .getMany();
+        return bookings;
     }
     // recent reviews
-    async getRecentReviews(ownerId: string){
-        const reviews = await this.reviewsService.getReviewsForOwner(ownerId);
-        return reviews.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).splice(0, 10);
+    async getRecentReviews(ownerId: string) {
+        const reviews = await this.reviewRepository.createQueryBuilder("review")
+            .leftJoin(User, "customer", "customer.id = review.customerId")
+            .innerJoin(Venue, "venue", "venue.id = review.venueId AND venue.ownerId = :ownerId", { ownerId })
+            .select([
+                "review.id AS id",
+                "review.rating AS rating",
+                "review.comment AS comment",
+                "review.createdAt AS createdAt",
+                "venue.id AS venueId",
+                "venue.name AS venueName",
+                "customer.name AS customerName"
+            ])
+            .orderBy("review.createdAt", "DESC")
+            .limit(10)
+            .getRawMany();
+
+        return reviews;
     }
+
 }

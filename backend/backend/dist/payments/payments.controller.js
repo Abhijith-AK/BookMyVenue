@@ -17,6 +17,10 @@ const common_1 = require("@nestjs/common");
 const payments_service_1 = require("./payments.service");
 const verify_payment_dto_1 = require("./dto/verify-payment.dto");
 const fail_payment_dto_1 = require("./dto/fail-payment.dto");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const user_enums_1 = require("../users/user.enums");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let PaymentsController = class PaymentsController {
     paymentsService;
     constructor(paymentsService) {
@@ -27,13 +31,15 @@ let PaymentsController = class PaymentsController {
         return this.paymentsService.verifyPayment(verifyPaymentDto);
     }
     ;
-    async failedPayment(dto) {
-        return this.paymentsService.failedPayment(dto.razorpay_order_id);
+    async failedPayment(user, dto) {
+        return this.paymentsService.failedPayment(dto.razorpay_order_id, user);
     }
     ;
 };
 exports.PaymentsController = PaymentsController;
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Post)('verify'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -41,10 +47,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "verifyPayment", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Post)('fail'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [fail_payment_dto_1.FailedPaymentDto]),
+    __metadata("design:paramtypes", [Object, fail_payment_dto_1.FailedPaymentDto]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "failedPayment", null);
 exports.PaymentsController = PaymentsController = __decorate([

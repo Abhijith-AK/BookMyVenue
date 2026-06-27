@@ -10,5 +10,6 @@ var UserRole;
 (function (UserRole) {
     UserRole["OWNER"] = "OWNER";
     UserRole["CUSTOMER"] = "CUSTOMER";
+    UserRole["ADMIN"] = "ADMIN";
 })(UserRole || (exports.UserRole = UserRole = {}));
 //# sourceMappingURL=user.enums.js.map

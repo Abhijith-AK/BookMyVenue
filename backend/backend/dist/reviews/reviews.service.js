@@ -22,6 +22,7 @@ const booking_entity_1 = require("../bookings/booking.entity");
 const bookings_service_1 = require("../bookings/bookings.service");
 const booking_enums_1 = require("../bookings/enums/booking.enums");
 const venue_entity_1 = require("../venues/enities/venue.entity");
+const user_enums_1 = require("../users/user.enums");
 let ReviewsService = class ReviewsService {
     reviewRepository;
     bookingsService;
@@ -52,11 +53,13 @@ let ReviewsService = class ReviewsService {
             throw new common_1.NotFoundException(`review not found for ${bookingId}`);
         return review;
     }
-    async createReview(createReviewDto) {
+    async createReview(customerId, createReviewDto) {
         const existing = await this.reviewRepository.findOne({ where: { bookingId: createReviewDto.bookingId } });
         if (existing)
             throw new common_1.BadRequestException(`review already exists for booking ${createReviewDto.bookingId}`);
         const booking = await this.bookingsService.getBookingById(createReviewDto.bookingId);
+        if (booking.customerId !== customerId)
+            throw new common_1.ForbiddenException();
         if (booking.status !== booking_enums_1.BookingStatus.COMPLETED)
             throw new common_1.ForbiddenException("Only completed booking can add reviews");
         if (booking.venueId !== createReviewDto.venueId)
@@ -67,9 +70,11 @@ let ReviewsService = class ReviewsService {
         await this.reviewRepository.save(review);
         return review;
     }
-    async updateReview(id, updateReviewDto) {
+    async updateReview(customerId, id, updateReviewDto) {
         const { comment, rating } = updateReviewDto;
         const review = await this.reviewRepository.findOne({ where: { id } });
+        if (customerId !== review?.customerId)
+            throw new common_1.ForbiddenException();
         if (!review)
             throw new common_1.NotFoundException(`review ${id} not found`);
         if (rating !== undefined)
@@ -79,10 +84,13 @@ let ReviewsService = class ReviewsService {
         await this.reviewRepository.save(review);
         return review;
     }
-    async deleteReview(id) {
-        const result = await this.reviewRepository.delete(id);
-        if (result.affected === 0)
+    async deleteReview(user, id) {
+        const review = await this.reviewRepository.findOne({ where: { id } });
+        if (!review)
             throw new common_1.NotFoundException(`review ${id} not found`);
+        if (review.customerId !== user.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
+        const result = await this.reviewRepository.delete(id);
     }
     async getReviewsForOwner(ownerId) {
         const reviews = await this.reviewRepository.createQueryBuilder("review")

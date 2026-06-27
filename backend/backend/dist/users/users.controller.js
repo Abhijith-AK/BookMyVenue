@@ -17,6 +17,11 @@ const common_1 = require("@nestjs/common");
 const users_service_1 = require("./users.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const user_enums_1 = require("./user.enums");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -25,21 +30,23 @@ let UsersController = class UsersController {
     getAllUsers() {
         return this.usersService.getAllUsers();
     }
-    getUser(id) {
-        return this.usersService.getUserById(id);
+    getUser(user) {
+        return this.usersService.getUserById(user.id);
     }
     createUser(createUserDto) {
         return this.usersService.createUser(createUserDto);
     }
-    updateUser(id, updateUserDto) {
-        return this.usersService.updateUser(id, updateUserDto);
+    updateUser(user, id, updateUserDto) {
+        return this.usersService.updateUser(user, id, updateUserDto);
     }
-    deleteUser(id) {
-        return this.usersService.deleteUser(id);
+    deleteUser(user, id) {
+        return this.usersService.deleteUser(user, id);
     }
 };
 exports.UsersController = UsersController;
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -47,12 +54,13 @@ __decorate([
 ], UsersController.prototype, "getAllUsers", null);
 __decorate([
     (0, common_1.Get)('/:id'),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getUser", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -61,17 +69,19 @@ __decorate([
 ], UsersController.prototype, "createUser", null);
 __decorate([
     (0, common_1.Patch)('/:id'),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:paramtypes", [Object, String, update_user_dto_1.UpdateUserDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)('/:id'),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "deleteUser", null);
 exports.UsersController = UsersController = __decorate([

@@ -15,44 +15,50 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OwnerController = void 0;
 const common_1 = require("@nestjs/common");
 const owner_service_1 = require("./owner.service");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const user_enums_1 = require("../users/user.enums");
+const roles_guard_1 = require("../auth/guards/roles.guard");
 let OwnerController = class OwnerController {
     ownerService;
     constructor(ownerService) {
         this.ownerService = ownerService;
     }
     async getDashboard(user) {
-        return this.ownerService.getOwnerDashboard(user.ownerId);
+        return this.ownerService.getOwnerDashboard(user.id);
     }
     async getRecentBookings(user) {
-        return this.ownerService.getRecentBookings(user.ownerId);
+        return this.ownerService.getRecentBookings(user.id);
     }
     async getRecentReviews(user) {
-        return this.ownerService.getRecentReviews(user.ownerId);
+        return this.ownerService.getRecentReviews(user.id);
     }
 };
 exports.OwnerController = OwnerController;
 __decorate([
     (0, common_1.Get)('dashboard'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OwnerController.prototype, "getDashboard", null);
 __decorate([
     (0, common_1.Get)('recent-bookings'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OwnerController.prototype, "getRecentBookings", null);
 __decorate([
     (0, common_1.Get)('recent-reviews'),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OwnerController.prototype, "getRecentReviews", null);
 exports.OwnerController = OwnerController = __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
     (0, common_1.Controller)('owner'),
     __metadata("design:paramtypes", [owner_service_1.OwnerService])
 ], OwnerController);

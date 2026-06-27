@@ -33,7 +33,7 @@ __decorate([
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_validator_1.IsPhoneNumber)('IN'),
-    __metadata("design:type", Number)
+    __metadata("design:type", String)
 ], CreateUserDto.prototype, "phoneNo", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
@@ -42,7 +42,7 @@ __decorate([
 ], CreateUserDto.prototype, "password", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsEnum)(user_enums_1.UserRole),
+    (0, class_validator_1.IsEnum)(user_enums_1.UserRole, { message: "invalid role" }),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "role", void 0);
 //# sourceMappingURL=create-user.dto.js.map

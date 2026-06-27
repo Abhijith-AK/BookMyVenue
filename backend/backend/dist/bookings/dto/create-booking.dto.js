@@ -16,7 +16,6 @@ const create_service_booking_dto_1 = require("./create-service-booking.dto");
 const create_slot_booking_dto_1 = require("./create-slot-booking.dto");
 class CreateBookingDto {
     venueId;
-    customerId;
     slots;
     guestCount;
     services;
@@ -27,11 +26,6 @@ __decorate([
     (0, class_validator_1.IsUUID)('4'),
     __metadata("design:type", String)
 ], CreateBookingDto.prototype, "venueId", void 0);
-__decorate([
-    (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.IsUUID)(),
-    __metadata("design:type", String)
-], CreateBookingDto.prototype, "customerId", void 0);
 __decorate([
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),

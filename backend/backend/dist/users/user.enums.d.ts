@@ -4,5 +4,6 @@ export declare enum UserStatus {
 }
 export declare enum UserRole {
     OWNER = "OWNER",
-    CUSTOMER = "CUSTOMER"
+    CUSTOMER = "CUSTOMER",
+    ADMIN = "ADMIN"
 }

@@ -3,11 +3,12 @@ import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateQuoteBookingDto } from './dto/create-quote-booking.dto';
 import { CancelBookingDto } from './dto/cancel-bookin.dto';
+import type { JwtUser } from "../auth/get-user.models";
 export declare class BookingsController {
     private bookingsService;
     constructor(bookingsService: BookingsService);
     getAllBookings(): Promise<Booking[]>;
-    createBooking(createBookingDto: CreateBookingDto): Promise<{
+    createBooking(user: JwtUser, createBookingDto: CreateBookingDto): Promise<{
         booking: Booking;
         order: import("razorpay/dist/types/orders").Orders.RazorpayOrder;
     }>;
@@ -17,10 +18,10 @@ export declare class BookingsController {
         serviceTotal: number;
         grandTotal: number;
     }>;
-    cancelBooking(id: string, cancelBookingDto: CancelBookingDto): Promise<{
+    cancelBooking(user: JwtUser, id: string, cancelBookingDto: CancelBookingDto): Promise<{
         booking: Booking;
     }>;
-    getBookingsByCustomer(customerId: string): Promise<Booking[]>;
-    getBookingsByOwner(ownerId: string): Promise<Booking[]>;
+    getBookingsByCustomer(user: JwtUser): Promise<Booking[]>;
+    getBookingsByOwner(user: JwtUser): Promise<Booking[]>;
     getBookingById(id: string): Promise<Booking>;
 }

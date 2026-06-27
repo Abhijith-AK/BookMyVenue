@@ -8,10 +8,6 @@ export class CreateBookingDto{
         @IsUUID('4')
         venueId!: string;
 
-        @IsNotEmpty()
-        @IsUUID()
-        customerId!: string;
-
         @IsArray()
         @ArrayNotEmpty()
         @IsNotEmpty()

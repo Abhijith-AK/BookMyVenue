@@ -14,6 +14,7 @@ import { VenueSlot } from './enities/venue-slot.entity';
 import { VenueService } from './enities/venue-service.entity';
 import { VenueCategory } from './enities/venue-category.entity';
 import { VenueAmenity } from './enities/venue-amenity.entity';
+import { JwtUser } from "../auth/get-user.models";
 export declare class VenuesService {
     private venueRepository;
     private venueSlotRepository;
@@ -41,8 +42,8 @@ export declare class VenuesService {
     updateService(id: string, updateServiceDto: UpdateVenueServiceDto): Promise<VenueService>;
     deleteService(id: string): Promise<void>;
     createVenue(createVenueDto: CreateVenueDto): Promise<Venue>;
-    updateVenue(id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>;
-    deleteVenue(id: string): Promise<void>;
+    updateVenue(user: JwtUser, id: string, updateVenueDto: UpdateVenueDto): Promise<Venue>;
+    deleteVenue(user: JwtUser, id: string): Promise<void>;
     createCategory(createCategoryDto: CreateVenueCategoryDto): Promise<VenueCategory>;
     deleteCategory(id: string): Promise<void>;
     updateCategory(id: string, updateCategoryDto: UpdateVenueCategoryDto): Promise<VenueCategory>;

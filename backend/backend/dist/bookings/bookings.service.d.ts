@@ -7,6 +7,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { UsersService } from "../users/users.service";
 import { PaymentsService } from "../payments/payments.service";
 import { Payment } from "../payments/payment.entity";
+import { JwtUser } from "../auth/get-user.models";
 export declare class BookingsService {
     private dataSource;
     private bookingRepository;
@@ -26,7 +27,7 @@ export declare class BookingsService {
         serviceTotal: number;
         grandTotal: number;
     }>;
-    createBooking(createBookingDto: CreateBookingDto): Promise<{
+    createBooking(customerId: string, createBookingDto: CreateBookingDto): Promise<{
         booking: Booking;
         order: import("razorpay/dist/types/orders").Orders.RazorpayOrder;
     }>;
@@ -34,7 +35,7 @@ export declare class BookingsService {
     failedBooking(bookingId: string, manager: EntityManager): Promise<void>;
     confirmedBooking(bookingId: string, manager: EntityManager): Promise<void>;
     completeBookings(): Promise<void>;
-    cancelBooking(bookingId: string, reason?: string): Promise<{
+    cancelBooking(bookingId: string, user: JwtUser, reason?: string): Promise<{
         booking: Booking;
     }>;
     updateCancelledBooking(bookingId: string, manager: EntityManager, reason?: string): Promise<void>;

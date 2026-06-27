@@ -66,6 +66,14 @@ let UsersService = class UsersService {
             throw new common_1.NotFoundException(`the user with id ${id} not found!`);
         return user;
     }
+    async findByEmailForLogin(email) {
+        const user = await this.userRepository
+            .createQueryBuilder("user")
+            .addSelect("user.password")
+            .where("user.email = :email", { email })
+            .getOne();
+        return user;
+    }
     async createUser(createUserDto) {
         const found = await this.userRepository.findOne({ where: { email: createUserDto.email } });
         if (found)
@@ -80,9 +88,11 @@ let UsersService = class UsersService {
         await this.userRepository.save(user);
         return user;
     }
-    async updateUser(id, updateUserDto) {
+    async updateUser(user1, id, updateUserDto) {
         const { name, phoneNo } = updateUserDto;
         const user = await this.getUserById(id);
+        if (user.id !== user1.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
         if (name)
             user.name = name;
         if (phoneNo)
@@ -90,11 +100,11 @@ let UsersService = class UsersService {
         await this.userRepository.save(user);
         return user;
     }
-    async deleteUser(id) {
-        const result = await this.userRepository.delete(id);
-        if (result.affected === 0) {
-            throw new common_1.NotFoundException(`User with ID "${id}" not found`);
-        }
+    async deleteUser(user1, id) {
+        const user = await this.getUserById(id);
+        if (user.id !== user1.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
+        await this.userRepository.delete(id);
     }
 };
 exports.UsersService = UsersService;

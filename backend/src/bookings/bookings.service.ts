@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateQuoteBookingDto } from './dto/create-quote-booking.dto';
 import { VenuesService } from 'src/venues/venues.service';
 import { Booking } from './booking.entity';
@@ -13,6 +13,8 @@ import { PaymentsService } from 'src/payments/payments.service';
 import { Cron } from '@nestjs/schedule';
 import { Payment } from 'src/payments/payment.entity';
 import { PaymentStatus } from 'src/payments/enums/payment.enum';
+import { JwtUser } from 'src/auth/get-user.models';
+import { UserRole } from 'src/users/user.enums';
 
 @Injectable()
 export class BookingsService {
@@ -60,6 +62,8 @@ export class BookingsService {
     // get bookings by owner
     async getBookingByOwner(ownerId: string): Promise<Booking[]> {
         const venues = await this.venueService.getVenueForOwners(ownerId);
+        if (!venues.length) throw new NotFoundException(`No booking found for OwnerID ${ownerId}`);
+
         const venueIds = venues.map(v => v.id);
         const bookings = await this.bookingRepository.createQueryBuilder("booking")
                                     .leftJoinAndSelect("booking.venue", "venue")
@@ -67,6 +71,7 @@ export class BookingsService {
                                     .where("booking.venueId IN (:...venueIds)", {venueIds})
                                     .andWhere("booking.status IN (:...statuses)", {statuses: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED, BookingStatus.COMPLETED]})
                                     .getMany();
+                                    
         if(!bookings.length) throw new NotFoundException(`No booking found for OwnerID ${ownerId}`);
         return bookings;
     }
@@ -125,17 +130,16 @@ export class BookingsService {
     }
 
     // create booking
-    async createBooking(createBookingDto: CreateBookingDto){
+    async createBooking(customerId: string, createBookingDto: CreateBookingDto){
         try{
             const booking = await this.dataSource.transaction(async (manager) => {  
 
                 const bookingRepository = manager.getRepository(Booking);
                 const venueSlotRepository = manager.getRepository(VenueSlot);
 
-                const {customerId, ...quoteDto} = createBookingDto;
-                const {guestCount, slots, venueId} = quoteDto;
+                const {guestCount, slots, venueId} = createBookingDto;
                 await this.userService.getUserById(customerId);
-                const quote = await this.createBookingQuote(quoteDto, manager);
+                const quote = await this.createBookingQuote(createBookingDto, manager);
 
                 const booking: Booking = bookingRepository.create({
                     customerId,
@@ -253,9 +257,11 @@ export class BookingsService {
         }
     }
     // cancel booking
-    async cancelBooking(bookingId: string, reason?: string){
+    async cancelBooking(bookingId: string, user: JwtUser, reason?: string){
         const booking = await this.bookingRepository.findOne({where: {id: bookingId}, relations:{slots: true, venue: true}});
         if(!booking) throw new NotFoundException(`Booking ID ${bookingId} not found`);
+        if(user.role === UserRole.OWNER && booking.venue.ownerId !== user.id) throw new ForbiddenException();                
+        if(user.role === UserRole.CUSTOMER && booking.customerId !== user.id) throw new ForbiddenException();             
         if(booking.status !== BookingStatus.CONFIRMED) throw new BadRequestException("Only confirmed bookings can be cancelled");
 
         const firstSlot = booking.slots.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0];
@@ -275,7 +281,6 @@ export class BookingsService {
         const venueSlotRepository = manager.getRepository(VenueSlot);
 
         const booking = await bookingRepository.findOne({where: {id: bookingId}, relations: {slots: true}});
-        const slots = booking?.slots;
 
         booking!.status = BookingStatus.CANCELLED;
         if(reason) booking!.cancellationReason = reason;

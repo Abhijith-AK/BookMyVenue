@@ -17,6 +17,10 @@ const common_1 = require("@nestjs/common");
 const reviews_service_1 = require("./reviews.service");
 const create_review_dto_1 = require("./dto/create-review.dto");
 const update_review_dto_1 = require("./dto/update-review.dto");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const user_enums_1 = require("../users/user.enums");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let ReviewsController = class ReviewsController {
     reviewsService;
     constructor(reviewsService) {
@@ -31,18 +35,20 @@ let ReviewsController = class ReviewsController {
     async getReviewByBooking(id) {
         return this.reviewsService.getReviewByBooking(id);
     }
-    async createReview(createReviewDto) {
-        return this.reviewsService.createReview(createReviewDto);
+    async createReview(user, createReviewDto) {
+        return this.reviewsService.createReview(user.id, createReviewDto);
     }
-    async updateReview(id, updateReviewDto) {
-        return this.reviewsService.updateReview(id, updateReviewDto);
+    async updateReview(user, id, updateReviewDto) {
+        return this.reviewsService.updateReview(user.id, id, updateReviewDto);
     }
-    async deleteReview(id) {
-        return this.reviewsService.deleteReview(id);
+    async deleteReview(user, id) {
+        return this.reviewsService.deleteReview(user, id);
     }
 };
 exports.ReviewsController = ReviewsController;
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
@@ -56,6 +62,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "getReviewsByVenue", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Get)('booking/:id'),
     __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
@@ -63,25 +71,34 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "getReviewByBooking", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_review_dto_1.CreateReviewDto]),
+    __metadata("design:paramtypes", [Object, create_review_dto_1.CreateReviewDto]),
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "createReview", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Patch)(':id'),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_review_dto_1.UpdateReviewDto]),
+    __metadata("design:paramtypes", [Object, String, update_review_dto_1.UpdateReviewDto]),
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "updateReview", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER, user_enums_1.UserRole.ADMIN),
     (0, common_1.Delete)(':id'),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], ReviewsController.prototype, "deleteReview", null);
 exports.ReviewsController = ReviewsController = __decorate([

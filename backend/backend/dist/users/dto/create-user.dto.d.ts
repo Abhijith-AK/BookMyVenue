@@ -2,7 +2,7 @@ import { UserRole } from "../user.enums";
 export declare class CreateUserDto {
     name: string;
     email: string;
-    phoneNo: number;
+    phoneNo: string;
     password: string;
     role: UserRole;
 }

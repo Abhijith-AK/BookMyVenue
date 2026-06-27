@@ -18,6 +18,10 @@ const bookings_service_1 = require("./bookings.service");
 const create_booking_dto_1 = require("./dto/create-booking.dto");
 const create_quote_booking_dto_1 = require("./dto/create-quote-booking.dto");
 const cancel_bookin_dto_1 = require("./dto/cancel-bookin.dto");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const user_enums_1 = require("../users/user.enums");
+const get_user_decorator_1 = require("../auth/decorators/get-user.decorator");
 let BookingsController = class BookingsController {
     bookingsService;
     constructor(bookingsService) {
@@ -26,20 +30,20 @@ let BookingsController = class BookingsController {
     async getAllBookings() {
         return this.bookingsService.getAllBookings();
     }
-    async createBooking(createBookingDto) {
-        return this.bookingsService.createBooking(createBookingDto);
+    async createBooking(user, createBookingDto) {
+        return this.bookingsService.createBooking(user.id, createBookingDto);
     }
     async createBookingQuote(createbookingQuoteDto) {
         return this.bookingsService.createBookingQuote(createbookingQuoteDto);
     }
-    async cancelBooking(id, cancelBookingDto) {
-        return this.bookingsService.cancelBooking(id, cancelBookingDto.reason);
+    async cancelBooking(user, id, cancelBookingDto) {
+        return this.bookingsService.cancelBooking(id, user, cancelBookingDto.reason);
     }
-    async getBookingsByCustomer(customerId) {
-        return this.bookingsService.getBookingByCustomer(customerId);
+    async getBookingsByCustomer(user) {
+        return this.bookingsService.getBookingByCustomer(user.id);
     }
-    async getBookingsByOwner(ownerId) {
-        return this.bookingsService.getBookingByOwner(ownerId);
+    async getBookingsByOwner(user) {
+        return this.bookingsService.getBookingByOwner(user.id);
     }
     async getBookingById(id) {
         return this.bookingsService.getBookingById(id);
@@ -47,19 +51,26 @@ let BookingsController = class BookingsController {
 };
 exports.BookingsController = BookingsController;
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Get)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "getAllBookings", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_booking_dto_1.CreateBookingDto]),
+    __metadata("design:paramtypes", [Object, create_booking_dto_1.CreateBookingDto]),
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "createBooking", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
     (0, common_1.Post)("quote"),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -67,25 +78,32 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "createBookingQuote", null);
 __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER, user_enums_1.UserRole.OWNER),
     (0, common_1.Patch)(":id/cancel"),
-    __param(0, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
+    __param(1, (0, common_1.Param)('id', new common_1.ParseUUIDPipe())),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, cancel_bookin_dto_1.CancelBookingDto]),
+    __metadata("design:paramtypes", [Object, String, cancel_bookin_dto_1.CancelBookingDto]),
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "cancelBooking", null);
 __decorate([
-    (0, common_1.Get)("customer/:customerId"),
-    __param(0, (0, common_1.Param)('customerId', new common_1.ParseUUIDPipe())),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.CUSTOMER),
+    (0, common_1.Get)("customer"),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "getBookingsByCustomer", null);
 __decorate([
-    (0, common_1.Get)("owner/:ownerId"),
-    __param(0, (0, common_1.Param)('ownerId', new common_1.ParseUUIDPipe())),
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.OWNER),
+    (0, common_1.Get)("owner"),
+    __param(0, (0, get_user_decorator_1.GetUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], BookingsController.prototype, "getBookingsByOwner", null);
 __decorate([

@@ -11,10 +11,6 @@ export class CreateReviewDto {
     venueId!: string;
 
     @IsNotEmpty()
-    @IsUUID()
-    customerId!: string;
-
-    @IsNotEmpty()
     @IsInt()
     @Min(1)
     @Max(5)

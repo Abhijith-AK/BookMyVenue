@@ -122,10 +122,15 @@ let PaymentsService = class PaymentsService {
         });
         return true;
     }
-    async failedPayment(orderId) {
+    async failedPayment(orderId, user) {
         const paymentRecord = await this.paymentRepository.findOne({ where: { razorpayOrderId: orderId } });
         if (!paymentRecord)
             throw new common_1.BadRequestException(`Invalid Order ${orderId}`);
+        const booking = await this.bookingService.getBookingById(paymentRecord.bookingId);
+        if (user) {
+            if (booking.customerId !== user.id)
+                throw new common_1.ForbiddenException();
+        }
         if (paymentRecord.status === payment_enum_1.PaymentStatus.FAILED)
             return true;
         if (paymentRecord.status === payment_enum_1.PaymentStatus.PAID)

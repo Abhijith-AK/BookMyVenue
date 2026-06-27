@@ -22,6 +22,7 @@ const venue_slot_entity_1 = require("./enities/venue-slot.entity");
 const venue_service_entity_1 = require("./enities/venue-service.entity");
 const venue_category_entity_1 = require("./enities/venue-category.entity");
 const venue_amenity_entity_1 = require("./enities/venue-amenity.entity");
+const user_enums_1 = require("../users/user.enums");
 let VenuesService = class VenuesService {
     venueRepository;
     venueSlotRepository;
@@ -233,11 +234,13 @@ let VenuesService = class VenuesService {
         await this.venueRepository.save(venue);
         return venue;
     }
-    async updateVenue(id, updateVenueDto) {
+    async updateVenue(user, id, updateVenueDto) {
         const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, openingTime, photos, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
         const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
         if (!venue)
             throw new common_1.NotFoundException(`service with ${id} not found.`);
+        if (venue.ownerId !== user.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
         const finalAvailableFrom = availableFrom ?? venue.availableFrom;
         const finalAvailableUntil = availableUntil ?? venue.availableUntil;
         const finalMaxCapacity = maxCapacity ?? venue.maxCapacity;
@@ -333,7 +336,10 @@ let VenuesService = class VenuesService {
         await this.venueRepository.save(venue);
         return venue;
     }
-    async deleteVenue(id) {
+    async deleteVenue(user, id) {
+        const venue = await this.getVenueById(id);
+        if (venue.venue.ownerId !== user.id && user.role !== user_enums_1.UserRole.ADMIN)
+            throw new common_1.ForbiddenException();
         const result = await this.venueRepository.delete(id);
         if (result.affected === 0)
             throw new common_1.NotFoundException(`Venue with ID ${id} not found.`);

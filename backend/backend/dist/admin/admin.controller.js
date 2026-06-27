@@ -12,6 +12,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
 const admin_service_1 = require("./admin.service");
+const roles_guard_1 = require("../auth/guards/roles.guard");
+const user_enums_1 = require("../users/user.enums");
+const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 let AdminController = class AdminController {
     adminService;
     constructor(adminService) {
@@ -47,6 +50,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getRecentReviews", null);
 exports.AdminController = AdminController = __decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
     (0, common_1.Controller)('admin'),
     __metadata("design:paramtypes", [admin_service_1.AdminService])
 ], AdminController);
