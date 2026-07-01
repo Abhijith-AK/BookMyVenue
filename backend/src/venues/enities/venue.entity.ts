@@ -37,6 +37,12 @@ export class Venue{
     @Column("text", { array: true})
     photos!: Photos[];
 
+    @Column({ type: 'float', nullable: true })
+    latitude!: number;
+
+    @Column({ type: 'float', nullable: true })
+    longitude!: number;
+
     @Column("int")
     minCapacity!: number;
 

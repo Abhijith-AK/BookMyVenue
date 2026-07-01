@@ -4,6 +4,8 @@ export declare class CreateVenueDto {
     description: string;
     address: string;
     district: Districts;
+    latitude?: number;
+    longitude?: number;
     minCapacity: number;
     maxCapacity: number;
     tags?: string[];

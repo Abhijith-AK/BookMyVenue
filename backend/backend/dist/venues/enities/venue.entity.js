@@ -24,6 +24,8 @@ let Venue = class Venue {
     address;
     district;
     photos;
+    latitude;
+    longitude;
     minCapacity;
     maxCapacity;
     tags;
@@ -80,6 +82,14 @@ __decorate([
     (0, typeorm_1.Column)("text", { array: true }),
     __metadata("design:type", Array)
 ], Venue.prototype, "photos", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], Venue.prototype, "latitude", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'float', nullable: true }),
+    __metadata("design:type", Number)
+], Venue.prototype, "longitude", void 0);
 __decorate([
     (0, typeorm_1.Column)("int"),
     __metadata("design:type", Number)

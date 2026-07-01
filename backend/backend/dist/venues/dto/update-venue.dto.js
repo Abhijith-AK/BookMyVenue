@@ -19,6 +19,7 @@ class UpdateVenueDto {
     address;
     district;
     minCapacity;
+    status;
     maxCapacity;
     tags;
     availableFrom;
@@ -64,6 +65,11 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], UpdateVenueDto.prototype, "minCapacity", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(venue_enums_1.VenueStatus),
+    __metadata("design:type", String)
+], UpdateVenueDto.prototype, "status", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_transformer_1.Type)(() => Number),

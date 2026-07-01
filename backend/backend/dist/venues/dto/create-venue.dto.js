@@ -18,6 +18,8 @@ class CreateVenueDto {
     description;
     address;
     district;
+    latitude;
+    longitude;
     minCapacity;
     maxCapacity;
     tags;
@@ -57,6 +59,18 @@ __decorate([
     (0, class_validator_1.IsEnum)(venue_enums_1.Districts),
     __metadata("design:type", String)
 ], CreateVenueDto.prototype, "district", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateVenueDto.prototype, "latitude", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateVenueDto.prototype, "longitude", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     (0, class_transformer_1.Type)(() => Number),
@@ -112,6 +126,7 @@ __decorate([
 ], CreateVenueDto.prototype, "holidays", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)((({ value }) => Array.isArray(value) ? value : value ? [value] : [])),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.IsEnum)(venue_enums_1.WeekDays, { each: true }),
     __metadata("design:type", Array)
@@ -139,6 +154,7 @@ __decorate([
 ], CreateVenueDto.prototype, "bookingBufferMinutes", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_transformer_1.Transform)((({ value }) => Array.isArray(value) ? value : value ? [value] : [])),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),
     (0, class_validator_1.IsUUID)('4', { each: true }),
@@ -146,6 +162,7 @@ __decorate([
 ], CreateVenueDto.prototype, "categoryIds", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_transformer_1.Transform)((({ value }) => Array.isArray(value) ? value : value ? [value] : [])),
     (0, class_validator_1.IsArray)(),
     (0, class_validator_1.ArrayNotEmpty)(),
     (0, class_validator_1.IsUUID)('4', { each: true }),

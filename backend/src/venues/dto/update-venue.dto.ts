@@ -1,5 +1,5 @@
 import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsDate, IsEnum, IsIn, IsNumber, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from "class-validator";
-import { Districts, WeekDays } from "../enums/venue.enums";
+import { Districts, VenueStatus, WeekDays } from "../enums/venue.enums";
 import { Type } from "class-transformer";
 
 export class UpdateVenueDto{
@@ -27,6 +27,10 @@ export class UpdateVenueDto{
         @IsNumber()
         @Min(1)
         minCapacity?: number;
+
+        @IsOptional()
+        @IsEnum(VenueStatus)
+        status?: VenueStatus 
     
         @IsOptional()
         @Type(() => Number)

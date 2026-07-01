@@ -13,6 +13,7 @@ import type { JwtUser } from "../auth/get-user.models";
 export declare class VenuesController {
     private venueService;
     constructor(venueService: VenuesService);
+    getAllVenuesAdmin(): Promise<import("./enities/venue.entity").Venue[]>;
     getAllVenues(query: GetVenueFilterDto): Promise<import("./enities/venue.entity").Venue[]>;
     getAllVenuesByOwner(ownerId: string): Promise<import("./enities/venue.entity").Venue[]>;
     createVenue(user: JwtUser, files: Array<Express.Multer.File>, createVenueDto: CreateVenueDto): Promise<import("./enities/venue.entity").Venue>;

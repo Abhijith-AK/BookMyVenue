@@ -29,6 +29,7 @@ export declare class VenuesService {
     private toMinutes;
     private toDate;
     private generateSlots;
+    getAllVenues(): Promise<Venue[]>;
     getFilteredVenues(query: GetVenueFilterDto): Promise<Venue[]>;
     getVenueById(id: string, query?: GetVenueByIdDto): Promise<{
         venue: Venue;

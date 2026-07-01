@@ -12,7 +12,7 @@ import { UpdateVenueAmenityDto } from './dto/update-amenity-venue.dto';
 import { GetVenueByIdDto } from './dto/get-venue-id.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Venue } from './enities/venue.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { VenueSlot } from './enities/venue-slot.entity';
 import { VenueService } from './enities/venue-service.entity';
 import { VenueCategory } from './enities/venue-category.entity';
@@ -51,7 +51,8 @@ export class VenuesService {
         const [h, m] = time.split(":").map(Number);
         return h * 60 + m;
     };
-    private toDate(date: Date): string {
+    private toDate(d: Date): string {
+        const date = new Date(d);
         return date.toISOString().split("T")[0];
     };
 
@@ -105,6 +106,9 @@ export class VenuesService {
     }
 
     // -------PUBLIC---------
+    async getAllVenues(){
+        return await this.venueRepository.find({where: {status: In([VenueStatus.APPROVED, VenueStatus.PENDING_APPROVAL])}});
+    }
     // filter venues
     async getFilteredVenues(query: GetVenueFilterDto): Promise<Venue[]> {
         const queryBuilder = this.venueRepository.createQueryBuilder('venue')
@@ -147,7 +151,7 @@ export class VenuesService {
             const dateStr = this.toDate(date);
             const todayStr = this.toDate(new Date());
             if(dateStr < this.toDate(venue.availableFrom) || dateStr > this.toDate(venue.availableUntil))
-                throw new BadRequestException(`Date ${date} not valid.`)
+                throw new BadRequestException(`Date ${date} not available. choose from ${venue.availableFrom} to ${venue.availableUntil}`)
             else if(venue.holidays?.some((h) => this.toDate(h) === dateStr))
                 throw new BadRequestException(`Date ${date} in holidays.`)
             else if(venue.weekDayOff?.includes(this.weekDays[dateObj.getDay()]))
@@ -248,6 +252,7 @@ export class VenuesService {
 
         const venue: Venue = this.venueRepository.create({
             ...venueData,
+            ownerId,
             categories,
             amenities,
             photos,
@@ -273,6 +278,7 @@ export class VenuesService {
             maxCapacity,
             minCapacity,
             name,
+            status,
             openingTime,
             pricePerSlot,
             slotDurationMinutes,
@@ -327,6 +333,7 @@ export class VenuesService {
                 throw new BadRequestException("Invalid venue details - minCapacity");
         };
         if(name) venue.name = name;
+        if(status) venue.status = status;
         if(openingTime) {
             if(this.toMinutes(finalClosingTime) > this.toMinutes(openingTime))
                 venue.openingTime = openingTime;

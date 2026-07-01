@@ -1,6 +1,6 @@
 import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsDate, IsEnum, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from "class-validator";
 import { Districts, WeekDays } from "../enums/venue.enums";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 
 export class CreateVenueDto {
     @IsNotEmpty()
@@ -21,6 +21,17 @@ export class CreateVenueDto {
     @IsNotEmpty()
     @IsEnum(Districts)
     district!: Districts;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    latitude?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    longitude?: number;
+
 
     @IsNotEmpty()
     @Type(() => Number)
@@ -68,6 +79,7 @@ export class CreateVenueDto {
     holidays?: Date[];
 
     @IsOptional()
+    @Transform((({value}) => Array.isArray(value) ? value : value ? [value] : []))
     @IsArray()
     @IsEnum(WeekDays, {each: true})
     weekDayOff?: WeekDays[];
@@ -91,12 +103,14 @@ export class CreateVenueDto {
     bookingBufferMinutes!: number;
 
     @IsNotEmpty()
+    @Transform((({value}) => Array.isArray(value) ? value : value ? [value] : []))
     @IsArray()
     @ArrayNotEmpty()
     @IsUUID('4', {each: true})
     categoryIds!: string[];
 
     @IsNotEmpty()
+    @Transform((({value}) => Array.isArray(value) ? value : value ? [value] : []))
     @IsArray()
     @ArrayNotEmpty()
     @IsUUID('4', {each: true})

@@ -2,6 +2,7 @@ import { Districts, VenueStatus, WeekDays } from "../enums/venue.enums";
 import { User } from "../../users/user.entity";
 import { VenueCategory } from "./venue-category.entity";
 import { VenueAmenity } from "./venue-amenity.entity";
+import { Photos } from "../photos.model";
 export declare class Venue {
     id: string;
     owner: User;
@@ -10,7 +11,9 @@ export declare class Venue {
     description: string;
     address: string;
     district: Districts;
-    photos: Pho[];
+    photos: Photos[];
+    latitude: number;
+    longitude: number;
     minCapacity: number;
     maxCapacity: number;
     tags?: string[];

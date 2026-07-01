@@ -35,6 +35,9 @@ let VenuesController = class VenuesController {
     constructor(venueService) {
         this.venueService = venueService;
     }
+    getAllVenuesAdmin() {
+        return this.venueService.getAllVenues();
+    }
     getAllVenues(query) {
         return this.venueService.getFilteredVenues(query);
     }
@@ -95,6 +98,14 @@ let VenuesController = class VenuesController {
     }
 };
 exports.VenuesController = VenuesController;
+__decorate([
+    (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN),
+    (0, common_1.Get)('/admin'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], VenuesController.prototype, "getAllVenuesAdmin", null);
 __decorate([
     (0, common_1.UseGuards)(roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(user_enums_1.UserRole.ADMIN, user_enums_1.UserRole.CUSTOMER),

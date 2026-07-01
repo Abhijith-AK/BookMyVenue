@@ -53,7 +53,8 @@ let VenuesService = class VenuesService {
         return h * 60 + m;
     }
     ;
-    toDate(date) {
+    toDate(d) {
+        const date = new Date(d);
         return date.toISOString().split("T")[0];
     }
     ;
@@ -94,6 +95,9 @@ let VenuesService = class VenuesService {
         }
         return slots;
     }
+    async getAllVenues() {
+        return await this.venueRepository.find({ where: { status: (0, typeorm_2.In)([venue_enums_1.VenueStatus.APPROVED, venue_enums_1.VenueStatus.PENDING_APPROVAL]) } });
+    }
     async getFilteredVenues(query) {
         const queryBuilder = this.venueRepository.createQueryBuilder('venue')
             .leftJoinAndSelect("venue.categories", "category")
@@ -133,7 +137,7 @@ let VenuesService = class VenuesService {
             const dateStr = this.toDate(date);
             const todayStr = this.toDate(new Date());
             if (dateStr < this.toDate(venue.availableFrom) || dateStr > this.toDate(venue.availableUntil))
-                throw new common_1.BadRequestException(`Date ${date} not valid.`);
+                throw new common_1.BadRequestException(`Date ${date} not available. choose from ${venue.availableFrom} to ${venue.availableUntil}`);
             else if (venue.holidays?.some((h) => this.toDate(h) === dateStr))
                 throw new common_1.BadRequestException(`Date ${date} in holidays.`);
             else if (venue.weekDayOff?.includes(this.weekDays[dateObj.getDay()]))
@@ -230,6 +234,7 @@ let VenuesService = class VenuesService {
         const photos = await Promise.all(files.map(file => this.cloudinaryService.uploadImage(file)));
         const venue = this.venueRepository.create({
             ...venueData,
+            ownerId,
             categories,
             amenities,
             photos,
@@ -242,7 +247,7 @@ let VenuesService = class VenuesService {
         return venue;
     }
     async updateVenue(user, id, updateVenueDto) {
-        const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, openingTime, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
+        const { address, availableFrom, availableUntil, bookingBufferMinutes, closingTime, description, district, holidays, maxCapacity, minCapacity, name, status, openingTime, pricePerSlot, slotDurationMinutes, tags, weekDayOff, amenityIds, categoryIds } = updateVenueDto;
         const venue = await this.venueRepository.findOne({ where: { id }, relations: { categories: true, amenities: true } });
         if (!venue)
             throw new common_1.NotFoundException(`service with ${id} not found.`);
@@ -301,6 +306,8 @@ let VenuesService = class VenuesService {
         ;
         if (name)
             venue.name = name;
+        if (status)
+            venue.status = status;
         if (openingTime) {
             if (this.toMinutes(finalClosingTime) > this.toMinutes(openingTime))
                 venue.openingTime = openingTime;

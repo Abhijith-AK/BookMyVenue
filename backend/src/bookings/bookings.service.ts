@@ -152,7 +152,7 @@ export class BookingsService {
                 })
                 
                 const bookedSlots = slots.map(s => venueSlotRepository.create({
-                    booking,
+                    bookingId: booking.id,
                     price: quote.venue.pricePerSlot,
                     startAt: s.startAt,
                     endAt: s.endAt,
@@ -161,7 +161,6 @@ export class BookingsService {
                 }))
                 
                 await bookingRepository.save(booking);
-                booking.slots = bookedSlots;
                 await venueSlotRepository.save(bookedSlots);
 
                 return await bookingRepository.findOne({
@@ -175,7 +174,7 @@ export class BookingsService {
 
             if (!booking) throw new Error("Booking creation failed");
 
-            const order =  await this.paymentService.createOrder(booking.totalAmount, `receipt_${booking.id}`);
+            const order =  await this.paymentService.createOrder(booking.totalAmount, `receipt_${booking.id.slice(0, 20)}`);
             await this.paymentService.createPaymentRecord(booking.id, order.id, booking.totalAmount);
             
             return { booking, order };

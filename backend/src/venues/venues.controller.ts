@@ -23,6 +23,13 @@ export class VenuesController {
     constructor(private venueService: VenuesService){}
 
     @UseGuards(RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @Get('/admin')
+    getAllVenuesAdmin(){
+        return this.venueService.getAllVenues()
+    }
+
+    @UseGuards(RolesGuard)
     @Roles(UserRole.ADMIN, UserRole.CUSTOMER)
     @Get()
     getAllVenues(@Query() query: GetVenueFilterDto){
